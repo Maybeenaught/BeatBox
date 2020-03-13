@@ -1,0 +1,23 @@
+﻿@page "/"
+
+@using Blazor.Extensions;
+@using Blazor.Extensions.Canvas.Canvas2D;
+
+@code {
+    private Canvas2DContext _context;
+
+    protected BECanvasComponent _canvas;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        this._context = await this._canvas.CreateCanvas2DAsync();
+        await this._context.SetFillStyleAsync("green");
+
+        await this._context.FillRectAsync(10, 100, 100, 100);
+
+        await this._context.SetFontAsync("48px serif");
+        await this._context.StrokeTextAsync("Hello Blazor!!!", 10, 100);
+    }
+}
+
+<BECanvas Width="300" Height="400" @ref="_canvas"></BECanvas>

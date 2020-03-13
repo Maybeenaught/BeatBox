@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29905.134
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeatBox.Net", "BeatBox.Net.csproj", "{6F982667-FDB2-4F03-879D-2D168AB41612}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6F982667-FDB2-4F03-879D-2D168AB41612}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F982667-FDB2-4F03-879D-2D168AB41612}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F982667-FDB2-4F03-879D-2D168AB41612}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F982667-FDB2-4F03-879D-2D168AB41612}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {04E1A981-793F-4E07-A474-6F0BB58D127C}
+	EndGlobalSection
+EndGlobal
