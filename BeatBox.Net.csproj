@@ -6,10 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Blazor.Extensions.Canvas" Version="1.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Data\" />
+    <PackageReference Include="NAudio" Version="1.10.0" />
   </ItemGroup>
 
 </Project>
