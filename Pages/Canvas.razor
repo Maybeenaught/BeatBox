@@ -11,13 +11,10 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         this._context = await this._canvas.CreateCanvas2DAsync();
-        await this._context.SetFillStyleAsync("green");
+        await this._context.SetFillStyleAsync("black");
+        await this._context.FillRectAsync(0, 0, this._canvas.Width, this._canvas.Height);
 
-        await this._context.FillRectAsync(10, 100, 100, 100);
-
-        await this._context.SetFontAsync("48px serif");
-        await this._context.StrokeTextAsync("Hello Blazor!!!", 10, 100);
     }
 }
 
-<BECanvas Width="300" Height="400" @ref="_canvas"></BECanvas>
+<BECanvas Width=800 Height=400 @ref="_canvas"></BECanvas>
