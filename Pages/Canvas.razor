@@ -2,19 +2,24 @@
 
 @using Blazor.Extensions;
 @using Blazor.Extensions.Canvas.Canvas2D;
+@using BeatBox.Net.Data;
+
+@inject AudioService Audio;
 
 @code {
+    protected BECanvasComponent _canvas;
     private Canvas2DContext _context;
 
-    protected BECanvasComponent _canvas;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
         this._context = await this._canvas.CreateCanvas2DAsync();
         await this._context.SetFillStyleAsync("black");
         await this._context.FillRectAsync(0, 0, this._canvas.Width, this._canvas.Height);
+    }
 
+    private void OnRecordClicked() {
+        Audio.CaptureWasapi();
     }
 }
 
 <BECanvas Width=800 Height=400 @ref="_canvas"></BECanvas>
+<button @onclick="OnRecordClicked">Record</button>
