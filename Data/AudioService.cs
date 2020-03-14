@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace BeatBox.Net.Data
+namespace BeatBox.Data
 {
     public class AudioService
     {
