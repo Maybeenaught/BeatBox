@@ -6,7 +6,6 @@
 @using System.Threading;
 
 @inject AudioService Audio;
-@inject BrowserService Browser;
 
 @code {
     private BECanvasComponent _canvas;
@@ -15,8 +14,6 @@
     private int Width { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
-        await GetDimensions();
-
         if(firstRender)
         {
             this._context = await this._canvas.CreateCanvas2DAsync();
