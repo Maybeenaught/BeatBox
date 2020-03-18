@@ -23,6 +23,7 @@ namespace BeatBox
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddScoped<AudioService>();
+            services.AddScoped<BrowserService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

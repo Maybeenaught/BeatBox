@@ -1,44 +1,97 @@
-﻿using NAudio.Wave;
+﻿using NAudio.Dsp;
+using NAudio.Wave;
 using System;
-using System.IO;
 using System.Threading;
 
 namespace BeatBox.Data
 {
     public class AudioService
     {
-        public AudioService() { }
+        private IWaveIn capture;
+
+        // FFT
+        public Complex[] fftBuffer;
+        public double[] spectrograph;
+        private int fftPos;
+        private static int fftLength = 8192; // NAudio fft wants powers of two!
+        private int m;
+
+        public AudioService()
+        {
+            if (!IsPowerOfTwo(fftLength))
+            {
+                throw new ArgumentException("FFT Length must be a power of two");
+            }
+            this.m = (int)Math.Log(fftLength, 2.0);
+            this.fftBuffer = new Complex[fftLength];
+            spectrograph = new double[1024];
+        }
+
 
         public void CaptureWasapi()
         {
-            var outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "NAudio");
-            Directory.CreateDirectory(outputFolder);
-            var outputFilePath = Path.Combine(outputFolder, "recorded.wav");
-            var capture = new WasapiLoopbackCapture();
-            var writer = new WaveFileWriter(outputFilePath, capture.WaveFormat);
+            capture = new WasapiLoopbackCapture();
 
             capture.DataAvailable += (s, a) =>
             {
-                writer.Write(a.Buffer, 0, a.BytesRecorded);
-                if (writer.Position > capture.WaveFormat.AverageBytesPerSecond * 20)
+                byte[] buffer = a.Buffer;
+                int bytesRecorded = a.BytesRecorded;
+                int bufferIncrement = capture.WaveFormat.BlockAlign;
+
+                for (int index = 0; index < bytesRecorded; index += bufferIncrement)
                 {
-                    capture.StopRecording();
+                    float sample32 = BitConverter.ToSingle(buffer, index);
+                    Add(sample32);
                 }
             };
 
             capture.RecordingStopped += (s, a) =>
             {
-                writer.Dispose();
-                writer = null;
                 capture.Dispose();
             };
 
             capture.StartRecording();
-            while (capture.CaptureState != NAudio.CoreAudioApi.CaptureState.Stopped)
+        }
+
+        bool IsPowerOfTwo(int x)
+        {
+            return (x & (x - 1)) == 0;
+        }
+
+        public void Add(float value)
+        {
+            // Remember the window function! There are many others as well.
+            fftBuffer[fftPos].X = (float)(value * FastFourierTransform.HammingWindow(fftPos, fftLength));
+            fftBuffer[fftPos].Y = 0; // This is always zero with audio.
+            fftPos++;
+            if (fftPos >= fftLength)
             {
-                Thread.Sleep(500);
+                fftPos = 0;
+                FastFourierTransform.FFT(true, m, fftBuffer);
+                FftCalculated();
             }
         }
 
+        private void FftCalculated()
+        {
+            int step = fftBuffer.Length / spectrograph.Length;
+            int i = 0;
+            for (int n = 0; n < fftBuffer.Length; n += step)
+            {
+                double yPos = 0;
+                for (int b = 0; b < step; b++)
+                {
+                    yPos += GetIntensity(fftBuffer[n + b]);
+                }
+                spectrograph[i] = (yPos/step*-1);
+                i++;
+            }
+        }
+
+        public double GetIntensity(Complex c)
+        {
+            double intensityDB = 10 * Math.Log10(Math.Sqrt(c.X * c.X + c.Y * c.Y));
+            return intensityDB;
+        }
     }
 }
