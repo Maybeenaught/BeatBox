@@ -19,8 +19,8 @@
             this._context = await this._canvas.CreateCanvas2DAsync();
             Audio.CaptureWasapi();
         }
-
-        await this._context.SetFillStyleAsync("255, 255, 255, 0.5");
+        await this._context.ClearRectAsync(0, 0, _canvas.Width, _canvas.Height);
+        await this._context.SetFillStyleAsync("black");
         await this._context.FillRectAsync(0, 0, this._canvas.Width, this._canvas.Height);
         await DrawSpectroLine();
 
