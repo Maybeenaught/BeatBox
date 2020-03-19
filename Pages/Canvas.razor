@@ -17,7 +17,6 @@
         if(firstRender)
         {
             this._context = await this._canvas.CreateCanvas2DAsync();
-            Audio.CaptureWasapi();
         }
         await this._context.ClearRectAsync(0, 0, _canvas.Width, _canvas.Height);
         await this._context.SetFillStyleAsync("black");
@@ -29,7 +28,7 @@
             // Note that the following line is necessary because otherwise
             // Blazor would not recognize the state change and not refresh the UI
             InvokeAsync(this.StateHasChanged);
-        }), null, 20, 20);
+        }), null, 1, 1);
     }
 
     public async Task DrawSpectroLine()

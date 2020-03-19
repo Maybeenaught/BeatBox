@@ -7,14 +7,15 @@ namespace BeatBox.Data
 {
     public class AudioService
     {
-        private IWaveIn capture;
-
         // FFT
         public Complex[] fftBuffer;
         public double[] spectrograph;
+
+        private WasapiLoopbackCapture _capture;
         private int fftPos;
         private static int fftLength = 8192; // NAudio fft wants powers of two!
         private int m;
+
 
         public AudioService()
         {
@@ -25,18 +26,14 @@ namespace BeatBox.Data
             this.m = (int)Math.Log(fftLength, 2.0);
             this.fftBuffer = new Complex[fftLength];
             spectrograph = new double[1024];
-        }
 
+            _capture = new WasapiLoopbackCapture();
 
-        public void CaptureWasapi()
-        {
-            capture = new WasapiLoopbackCapture();
-
-            capture.DataAvailable += (s, a) =>
+            _capture.DataAvailable += (s, a) =>
             {
                 byte[] buffer = a.Buffer;
                 int bytesRecorded = a.BytesRecorded;
-                int bufferIncrement = capture.WaveFormat.BlockAlign;
+                int bufferIncrement = _capture.WaveFormat.BlockAlign;
 
                 for (int index = 0; index < bytesRecorded; index += bufferIncrement)
                 {
@@ -45,12 +42,12 @@ namespace BeatBox.Data
                 }
             };
 
-            capture.RecordingStopped += (s, a) =>
+            _capture.RecordingStopped += (s, a) =>
             {
-                capture.Dispose();
+                _capture.Dispose();
             };
 
-            capture.StartRecording();
+            _capture.StartRecording();
         }
 
         bool IsPowerOfTwo(int x)
