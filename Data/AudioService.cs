@@ -1,37 +1,31 @@
 ﻿using NAudio.Dsp;
 using NAudio.Wave;
 using System;
-using System.Threading;
+using System.Linq;
 
 namespace BeatBox.Data
 {
     public class AudioService
     {
-        private IWaveIn capture;
+        public int AverageIntensity => (int)Spectrograph.Sum() / Spectrograph.Length;
 
-        // FFT
-        public Complex[] fftBuffer;
-        public double[] spectrograph;
+        public Complex[] FftBuffer { get; set; }
+        public double[] Spectrograph { get; set; }
+
         private int fftPos;
-        private static int fftLength = 8192; // NAudio fft wants powers of two!
-        private int m;
+        private const int fftLength = 2048; // NAudio fft wants powers of two!
+
 
         public AudioService()
         {
-            if (!IsPowerOfTwo(fftLength))
-            {
-                throw new ArgumentException("FFT Length must be a power of two");
-            }
-            this.m = (int)Math.Log(fftLength, 2.0);
-            this.fftBuffer = new Complex[fftLength];
-            spectrograph = new double[1024];
-        }
+            if (!IsPowerOfTwo(fftLength)) throw new ArgumentException("FFT Length must be a power of two!");
 
+            FftBuffer = new Complex[fftLength];
+            Spectrograph = new double[1024];
 
-        public void CaptureWasapi()
-        {
-            capture = new WasapiLoopbackCapture();
+            var capture = new WasapiLoopbackCapture();
 
+            capture.RecordingStopped += (s, a) => capture.Dispose();
             capture.DataAvailable += (s, a) =>
             {
                 byte[] buffer = a.Buffer;
@@ -45,53 +39,42 @@ namespace BeatBox.Data
                 }
             };
 
-            capture.RecordingStopped += (s, a) =>
-            {
-                capture.Dispose();
-            };
-
             capture.StartRecording();
-        }
-
-        bool IsPowerOfTwo(int x)
-        {
-            return (x & (x - 1)) == 0;
         }
 
         public void Add(float value)
         {
             // Remember the window function! There are many others as well.
-            fftBuffer[fftPos].X = (float)(value * FastFourierTransform.HammingWindow(fftPos, fftLength));
-            fftBuffer[fftPos].Y = 0; // This is always zero with audio.
+            FftBuffer[fftPos].X = (float)(value * FastFourierTransform.HammingWindow(fftPos, fftLength));
+            FftBuffer[fftPos].Y = 0; // This is always zero with audio.
             fftPos++;
             if (fftPos >= fftLength)
             {
                 fftPos = 0;
-                FastFourierTransform.FFT(true, m, fftBuffer);
+                FastFourierTransform.FFT(true, (int)Math.Log(fftLength, 2.0), FftBuffer);
                 FftCalculated();
             }
         }
 
         private void FftCalculated()
         {
-            int step = fftBuffer.Length / spectrograph.Length;
-            int i = 0;
-            for (int n = 0; n < fftBuffer.Length; n += step)
-            {
-                double yPos = 0;
-                for (int b = 0; b < step; b++)
-                {
-                    yPos += GetIntensity(fftBuffer[n + b]);
-                }
-                spectrograph[i] = (yPos/step*-1);
-                i++;
-            }
+            int step = FftBuffer.Length / Spectrograph.Length;
+            Spectrograph = FftBuffer
+                .Select((a, i) => (Intensity: GetIntensity(a), Index: i))
+                .GroupBy(
+                    f => f.Index / step,
+                    f => f.Intensity,
+                    (spectroIndex, intensities) => (SpectroIndex: spectroIndex, AverageIntensity: intensities.Average()))
+                .Select(i => i.AverageIntensity)
+                .ToArray();
         }
 
-        public double GetIntensity(Complex c)
+        private double GetIntensity(Complex c)
         {
-            double intensityDB = 10 * Math.Log10(Math.Sqrt(c.X * c.X + c.Y * c.Y));
+            double intensityDB = 10 * Math.Log10(Math.Sqrt((c.X * c.X) + (c.Y * c.Y)));
             return intensityDB;
         }
+
+        private bool IsPowerOfTwo(int x) => (x & (x - 1)) == 0;
     }
 }

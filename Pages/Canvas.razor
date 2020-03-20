@@ -17,7 +17,6 @@
         if(firstRender)
         {
             this._context = await this._canvas.CreateCanvas2DAsync();
-            Audio.CaptureWasapi();
         }
         await this._context.ClearRectAsync(0, 0, _canvas.Width, _canvas.Height);
         await this._context.SetFillStyleAsync("black");
@@ -29,19 +28,19 @@
             // Note that the following line is necessary because otherwise
             // Blazor would not recognize the state change and not refresh the UI
             InvokeAsync(this.StateHasChanged);
-        }), null, 20, 20);
+        }), null, 4, 4);
     }
 
     public async Task DrawSpectroLine()
     {
-        double stepIncrement = (double)_canvas.Width / (Audio.spectrograph.Length / 2);
+        double stepIncrement = (double)_canvas.Width / (Audio.Spectrograph.Length / 2);
         await this._context.SetStrokeStyleAsync("yellow");
         await this._context.BeginPathAsync();
         await this._context.MoveToAsync(0, 0);
-        for (int i = 0; i < Audio.spectrograph.Length/2; i++)
+        for (int i = 0; i < Audio.Spectrograph.Length/2; i++)
         {
-            double amp = this._canvas.Height/2 - ((this._canvas.Height/2) * (double)(Audio.spectrograph[i]/100));
-            await this._context.LineToAsync((int)i*stepIncrement, (int)amp);
+            double amp = (this._canvas.Height/2) * (double)(Audio.Spectrograph[i]/100);
+            await this._context.LineToAsync(i*stepIncrement, Math.Max(0, Math.Min( this._canvas.Height, this._canvas.Height/2 + amp)));
         }
         await this._context.StrokeAsync();
         await this._context.ClosePathAsync();
