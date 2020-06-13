@@ -1,5 +1,9 @@
 //system
-var canvasSize = 750;
+var canvasSize = 660;
+var colorfulBackgroundOn = true; //is set to false when redrawBackground is true
+var spectrogramOn = true;
+var fractalOn = true;
+var frameRateOn = false;
 var redrawBackground = true; //when false, previous frames aren't overwritten
 var htmlHelper;
 var konamiCode = [];
@@ -37,6 +41,7 @@ class HtmlHelper {
     
     //buttons
     buttonListDiv = createDiv(); //div to hold buttons
+    frameRateButton = createButton("FR");
     songButton;
     muteButton;
 
@@ -56,6 +61,8 @@ class HtmlHelper {
         this.interactivityDiv.child(this.sliderListDiv);
 
         this.buttonListDiv.class('buttonList');
+        this.buttonListDiv.child(this.frameRateButton);
+        this.frameRateButton.mousePressed(toggleFrameRateDisplay);
 
         this.sliderListDiv.class('sliderList');
     }
@@ -95,15 +102,24 @@ function songLoaded() {
     htmlHelper.initSongElements();
     isSongLoaded = true;
     isSongLoading = false;
+    enableVisualFeatures(true);
 }
 
 function songLoadFailed() {
     isSongLoadSuccess = false;
     isSongLoading = false;
+    enableVisualFeatures(false);
 }
 
 function songLoading() {
     isSongLoading = true;
+    enableVisualFeatures(false);
+}
+
+function enableVisualFeatures(isEnable) {
+    colorfulBackgroundOn = isEnable;
+    spectrogramOn = isEnable;
+    fractalOn = isEnable;
 }
 
 function songEnded() {
@@ -146,6 +162,10 @@ function toggleMute() {
     }
 
     isSongMuted = !isSongMuted;
+}
+
+function toggleFrameRateDisplay() {
+    frameRateOn = !frameRateOn;
 }
 
 //This method exists to mitigate bugs caused by the jump() function
@@ -238,13 +258,14 @@ function checkKonamiCode(newInput) {
         && konamiCode[8] === "B"
         && konamiCode[9] === "A"
       ) {
-        konamiCodeEffect();
+        redrawBackground = !redrawBackground;
+        resetColorfulBackground();
     }
 }
 
-function konamiCodeEffect(){
-    //redrawBackground = !redrawBackground;
-    //resetColorfulBackground()
+function resetColorfulBackground(reset = !colorfulBackgroundOn) {
+    colorfulBackgroundOn = reset;
+    background(0, 0, 0);
 }
 
 function saveCurrentVolume() {
@@ -270,38 +291,26 @@ function setup() {
     htmlHelper = new HtmlHelper(canvas);
     konamiCode = new Array(10).fill("");
     colorMode(HSB, 100);
+    if(!redrawBackground) {
+        resetColorfulBackground(false);
+    }
 
     //sound
     amp = new p5.Amplitude();
     fft = new p5.FFT(0.9, numFreqBands);
     spectrogram = new Array(width).fill(new SoundHistoryNode(songMaxVolume / 2, [0, 0, 0]));
-    
-    //visual choice dropdown
-    visualChoiceDropdown = createSelect();
-    visualChoiceDropdown.option("Dancing Tree");
-    visualChoiceDropdown.option("Mandelbrot");
-
-    //spectrogram toggle
-    spectrogramOn = createCheckbox("Spectrogram", true);
 
     //fractal
     fractalAngleHistory = new Array(fractalAngleHistoryCount).fill(0);
 
     //frame rate
-    frameRateOn = createCheckbox("Framerate", true);
     fpsHistory = new Array(20).fill(1);
-    
-    //colorful background
-    colorfulBackgroundOn = createCheckbox("Colorful Background", true);
-}
-
-function windowResized() {
-    resizeCanvas(windowWidth-200, windowHeight);
 }
 
 //draw() is called repeatedly. It defaults at 60fps but adjusts automatically based on CPU load
 function draw() {
-    if(!colorfulBackgroundOn.checked() && redrawBackground) {
+    //system
+    if(!colorfulBackgroundOn && redrawBackground) {
         background(0, 0, 0);
     }
 
@@ -354,32 +363,25 @@ function draw() {
     }
 
     //draw colorful background
-    if(colorfulBackgroundOn.checked()) {
+    if(colorfulBackgroundOn) {
         drawColorfulBackground();
     }
 
     //draw spectrogram
-    if(spectrogramOn.checked()) {
+    if(spectrogramOn) {
         drawSpectrogram(currentColorHue);
     }
+
     //remove the oldest soundHistoryNode from spectrogram
     spectrogram.splice(0, 1);
 
-
-    //draw fractals
-    switch(visualChoiceDropdown.value()) {
-        case "Dancing Tree":
-            drawFractals(totalEnergy, currentVolume, currentColorHue);
-            break;
-        case "Mandelbrot":
-            drawMandelbrot(currentVolume, currentColorHue);
-            break;
-        default:
-            console.log("Uh-oh, the visual choice dropdown encountered an error :(")
+    //fractal
+    if(fractalOn) {
+        drawFractals(totalEnergy, songVolume, currentColorHue);
     }
 
-    //print avg frame rate
-    if(frameRateOn.checked()) {
+    //frame rate
+    if(frameRateOn) {
         printAvgFrameRate();
     }
 }
@@ -447,47 +449,6 @@ function drawFractals(totalEnergy, songVolume, currentColorHue) {
     scale(1, -1);
     drawBranch(width / heightDivider, fractalAngleAvg, fractalResolution, currentColorHue, colorResolution);
     pop();
-}
-
-function drawMandelbrot(currentVolume, currentColorHue) {
-    //var magnification = createInput("25");
-    //magnificationFactor = magnification.value();
-    var magnificationFactor = 35;//*(currentVolume/2);
-    var energy = 3;
-    var pointStrength = 1;
-    var panX = 10*currentVolume;
-    var panY = 10*currentVolume;
-    for(var x=0; x < width; x++) {
-        for(var y=0; y < height; y++) {
-            var belongsToSet = checkIfBelongsToMandelbrotSet(x/magnificationFactor - panX, y/magnificationFactor - panY, currentVolume);
-            if(belongsToSet) {
-                fill(currentColorHue);
-                rect(width/2+x*energy, height/2+y*energy, pointStrength, pointStrength, 20);
-                rect(width/2-x*energy, height/2-y*energy, pointStrength, pointStrength, 20);
-                rect(width/2+x*energy, height/2-y*energy, pointStrength, pointStrength, 20);
-                rect(width/2-x*energy, height/2+y*energy, pointStrength, pointStrength, 20);
-            }
-        }
-    }
-}
-
-function checkIfBelongsToMandelbrotSet(x, y, currentVolume) {
-    var realComponentOfResult = x;
-    var imaginaryComponentOfResult = y;
-
-    for(var i = 0; i < (currentVolume * 20) + 10; i++) {
-        // Calculate the real and imaginary components of the result
-        // separately
-        var tempRealComponent = realComponentOfResult * realComponentOfResult - imaginaryComponentOfResult * imaginaryComponentOfResult + x;
-        var tempImaginaryComponent = 2 * realComponentOfResult * imaginaryComponentOfResult + y;
-
-        realComponentOfResult = tempRealComponent;
-        imaginaryComponentOfResult = tempImaginaryComponent;
-    }
-
-    if (realComponentOfResult * imaginaryComponentOfResult < 10)
-        return true; // In the Mandelbrot set
-    return false; // Not in the set
 }
 
 //drawBranch() is a Recursive function used to draw fractals
