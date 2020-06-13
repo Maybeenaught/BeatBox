@@ -1,0 +1,41 @@
+html, body {
+  height: 100%;
+}
+  
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column; /* stack divs vertically */
+}
+
+.mediaPlayer {
+  margin-top: 0.5em;
+}
+
+.interactivity div {
+  margin-top: 0.5em;
+}
+
+  .buttonList {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+    .buttonList button:first-of-type {
+      margin-left: 0;
+    }
+
+    .buttonList button {
+      margin-left: 2em;
+    }
+
+  .sliderList {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
