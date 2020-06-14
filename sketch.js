@@ -1,39 +1,39 @@
 //system
-var canvasSize = 660;
-var colorfulBackgroundOn = true; //is set to false when redrawBackground is true
-var spectrogramOn = true;
-var fractalOn = true;
-var frameRateOn = false;
-var redrawBackground = true; //when false, previous frames aren't overwritten
-var htmlHelper;
-var konamiCode = [];
+let canvasSize = 660;
+let colorfulBackgroundOn = true; //is set to false when redrawBackground is true
+let spectrogramOn = true;
+let fractalOn = true;
+let frameRateOn = false;
+let redrawBackground = true; //when false, previous frames aren't overwritten
+let htmlHelper;
+let konamiCode = [];
 
 //song
-var song;
-var isSongLoaded = false;
-var isSongLoadSuccess = true;
-var isSongLoading = false;
-var isSongMuted = false;
-var songMaxVolume = 1; //range 0-1 that determines the song's volume
-var songPosition = 0;
-var songPositionAutoUpdate = true;
-var numJumpSeconds = 10; //number of seconds to skip forward or back
+let song;
+let isSongLoaded = false;
+let isSongLoadSuccess = true;
+let isSongLoading = false;
+let isSongMuted = false;
+let songMaxVolume = 1; //range 0-1 that determines the song's volume
+let songPosition = 0;
+let songPositionAutoUpdate = true;
+let numJumpSeconds = 10; //number of seconds to skip forward or back
 
 //sound
-var amp;
-var fft; //frequency fourier transform
-var numFreqBands = 128;
-var spectrogram = [];
-var currentVolume = songMaxVolume; //volume set from slider
+let amp;
+let fft; //frequency fourier transform
+let numFreqBands = 128;
+let spectrogram = [];
+let currentVolume = songMaxVolume; //volume set from slider
 
 //fractal
-var fractalAngleHistory = [];
-var fractalAngleHistoryCount = 3; //determines the smoothness of the fractal movement
-var heightDivider = 8; //determines starting heights of fractals relative to window height
-var rotateOffset = 0;
+let fractalAngleHistory = [];
+let fractalAngleHistoryCount = 3; //determines the smoothness of the fractal movement
+let heightDivider = 8; //determines starting heights of fractals relative to window height
+let rotateOffset = 0;
 
 //frame rate
-var fpsHistory = [];
+let fpsHistory = [];
 
 class HtmlHelper {
     canvasDiv = createDiv();
@@ -342,18 +342,18 @@ function draw() {
     
     //get frequency info
     fft.analyze();
-    var lowEnergy = fft.getEnergy(40, 180);
-    var highEnergy = fft.getEnergy(10000, 15000);
-    var totalEnergy = fft.getEnergy(40, 15000);
+    let lowEnergy = fft.getEnergy(40, 180);
+    let highEnergy = fft.getEnergy(10000, 15000);
+    let totalEnergy = fft.getEnergy(40, 15000);
 
     //get volume info
-    var songVolume = amp.getLevel();
+    let songVolume = amp.getLevel();
     
     //set color variables from vol and freq info
-    var currentColorHue = map(highEnergy, 0, 100, 0, 100);
-    var currentColorSaturation = map(lowEnergy, 0, 255, 50, 100);
-    var currentColorBrightness = map(totalEnergy, 0, 255, 0, 100);
-    var currentColor = [currentColorHue, currentColorSaturation, currentColorBrightness];
+    let currentColorHue = map(highEnergy, 0, 100, 0, 100);
+    let currentColorSaturation = map(lowEnergy, 0, 255, 50, 100);
+    let currentColorBrightness = map(totalEnergy, 0, 255, 0, 100);
+    let currentColor = [currentColorHue, currentColorSaturation, currentColorBrightness];
 
     if(song.isPlaying()) {
         spectrogram.push(new SoundHistoryNode(songVolume, currentColor));
@@ -396,7 +396,7 @@ function printMessage(message) {
 }
 
 function drawColorfulBackground() {
-    for(var i = 0; i < spectrogram.length; i++) {
+    for(let i = 0; i < spectrogram.length; i++) {
         stroke(spectrogram[i].col);
         line(i, 0, i, height);
     }
@@ -405,10 +405,10 @@ function drawColorfulBackground() {
 function drawSpectrogram(currentColorHue) {
     noFill();
     beginShape();
-    for(var i = 0; i < spectrogram.length; i++) {
-        var y = map(spectrogram[i].volume, 0, songMaxVolume, height * 0.6, height * 0.4);
+    for(let i = 0; i < spectrogram.length; i++) {
+        let y = map(spectrogram[i].volume, 0, songMaxVolume, height * 0.6, height * 0.4);
 
-        var oppositeHue = currentColorHue + 50;
+        let oppositeHue = currentColorHue + 50;
         if(oppositeHue > 99) {
             oppositeHue %= 100;
         }
@@ -420,14 +420,14 @@ function drawSpectrogram(currentColorHue) {
 
 function drawFractals(totalEnergy, songVolume, currentColorHue) {
     //TODO: find a way to normalize totalEnergy
-    var fractalResolution = map(totalEnergy, 0, 100, 16, 10); //more energy => finer resolution
-    var colorResolution = map(totalEnergy, 0, 255, 0, 50);
+    let fractalResolution = map(totalEnergy, 0, 100, 16, 10); //more energy => finer resolution
+    let colorResolution = map(totalEnergy, 0, 255, 0, 50);
 
     //average the current fractal angle with previous angles for a smoother transition
-    var currentFractalAngle = map(songVolume, 0, currentVolume / htmlHelper.volumeSliderMax, 0, PI);
+    let currentFractalAngle = map(songVolume, 0, currentVolume / htmlHelper.volumeSliderMax, 0, PI);
     fractalAngleHistory.push(currentFractalAngle);
-    var fractalAngleAvg = 0;
-    for(var i = 0; i < fractalAngleHistory.length; i++) {
+    let fractalAngleAvg = 0;
+    for(let i = 0; i < fractalAngleHistory.length; i++) {
         fractalAngleAvg += fractalAngleHistory[i];
     }
     fractalAngleAvg /= fractalAngleHistory.length;
@@ -468,8 +468,8 @@ function drawBranch(len, fractalAngle, fractalResolution, branchColor, colorReso
 
     //Below code can adjust the look of the fractals. Needs more work to optimize performance
 
-    // var numLines = 3;
-    // for(var i = 0; i < numLines; i++) {
+    // let numLines = 3;
+    // for(let i = 0; i < numLines; i++) {
     //     if(i == 0) {
     //         line(0, 0, 0, -len);
     //         continue;
@@ -511,8 +511,8 @@ function drawBranch(len, fractalAngle, fractalResolution, branchColor, colorReso
 
 function printAvgFrameRate() {
     fpsHistory.push(frameRate());
-    var avgFr = 0;
-    for(var i = 0; i < fpsHistory.length; i++) {
+    let avgFr = 0;
+    for(let i = 0; i < fpsHistory.length; i++) {
         avgFr += fpsHistory[i];
     }
     avgFr /= fpsHistory.length;
