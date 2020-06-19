@@ -5,10 +5,11 @@ var beatbox = {
     beatbox.htmlHelper.init(beatbox.canvas.frameRateDisplay.toggle);
     beatbox.song.p5Song = loadSound(
       "sounds/Sunrise.mp3",
-      beatbox.initSongElements,
+      beatbox.song.loaded,
       beatbox.canvas.setVisualElementsVisible(false),
       beatbox.canvas.setVisualElementsVisible(false)
     );
+    beatbox.initSongElements();
     colorMode(HSB, 100);
     beatbox.canvas.spectrogram.nodes = new Array(beatbox.canvas.width).fill({
       volume: beatbox.sound.maxVolume / 2,
@@ -222,20 +223,16 @@ var beatbox = {
     position: 0,
     positionAutoUpdate: true,
     skipRate: 10, //number of seconds to skip forward or back,
-    load: function (setVisualElementsVisible) {
+    load: function () {
       beatbox.song.isLoading = true;
-      setVisualElementsVisible(false);
     },
-    loaded: function (initSongElements, setVisualElementsVisible) {
-      initSongElements();
+    loaded: function () {
       beatbox.song.isLoaded = true;
       beatbox.song.isLoading = false;
-      setVisualElementsVisible(true);
     },
-    loadFailed: function (setVisualElementsVisible) {
+    loadFailed: function () {
       beatbox.song.isLoadSuccess = false;
       beatbox.song.isLoading = false;
-      setVisualElementsVisible(false);
     },
     ended: function () {
       beatbox.htmlHelper.buttonList.buttons.songButton.html("Play");
