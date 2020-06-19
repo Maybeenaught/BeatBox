@@ -9,7 +9,6 @@ var beatbox = {
       beatbox.canvas.setVisualElementsVisible(false),
       beatbox.canvas.setVisualElementsVisible(false)
     );
-    beatbox.initSongElements();
     colorMode(HSB, 100);
     beatbox.canvas.spectrogram.nodes = new Array(beatbox.canvas.width).fill({
       volume: beatbox.sound.maxVolume / 2,
@@ -125,7 +124,7 @@ var beatbox = {
     //sliders
     beatbox.htmlHelper.sliderList.sliders.songPositionSlider = createSlider(
       0,
-      beatbox.song.duration,
+      beatbox.song.p5Song.duration(),
       0,
       1
     );
@@ -229,6 +228,8 @@ var beatbox = {
     loaded: function () {
       beatbox.song.isLoaded = true;
       beatbox.song.isLoading = false;
+      beatbox.song.duration = beatbox.song.p5Song.duration()
+      beatbox.initSongElements();
     },
     loadFailed: function () {
       beatbox.song.isLoadSuccess = false;
@@ -438,6 +439,7 @@ var beatbox = {
     },
   },
   interactivity: {
+    timeSkipLength: 10,
     //This method exists to mitigate bugs caused by the jump() function
     //Shoutout to joepdooper on this thread for finding this solution:
     //https://github.com/processing/p5.js-sound/issues/372
@@ -453,20 +455,20 @@ var beatbox = {
       let jumpToTime = 0;
       switch (keyCode) {
         case LEFT_ARROW:
-          jumpToTime = beatbox.song.p5Song.currentTime() - numJumpSeconds;
+          jumpToTime = beatbox.song.p5Song.currentTime() - beatbox.interactivity.timeSkipLength;
           if (jumpToTime > 0) {
-            preJump();
+            beatbox.interactivity.preJump();
             beatbox.song.p5Song.jump(jumpToTime);
           } else {
-            preJump();
+            beatbox.interactivity.preJump();
             beatbox.song.p5Song.jump(0);
           }
-          checkKonamiCode("LEFT");
+          beatbox.interactivity.konami.checkKonamiCode("LEFT");
           break;
         case RIGHT_ARROW:
-          jumpToTime = beatbox.song.p5Song.currentTime() + numJumpSeconds;
+          jumpToTime = beatbox.song.p5Song.currentTime() + beatbox.interactivity.timeSkipLength;
           if (jumpToTime < beatbox.song.duration) {
-            preJump();
+            beatbox.interactivity.preJump();
             beatbox.song.p5Song.jump(jumpToTime);
           } else {
             beatbox.song.p5Song.stop();
@@ -486,7 +488,7 @@ var beatbox = {
           beatbox.interactivity.konami.checkKonamiCode("B");
           break;
         case 32: //spacebar
-          beatbox.interactivity.konami.toggleSongPlayback();
+          beatbox.song.togglePlayback();
           break;
         default:
           beatbox.interactivity.konami.checkKonamiCode("");
@@ -529,4 +531,8 @@ function setup() {
 //draw() is called repeatedly. It defaults at 60fps but adjusts automatically based on CPU load
 function draw() {
   beatbox.draw()
+}
+
+function keyPressed() {
+  beatbox.interactivity.keyPressed()
 }
