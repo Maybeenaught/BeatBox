@@ -230,6 +230,7 @@ var beatbox = {
       beatbox.song.isLoading = false;
       beatbox.song.duration = beatbox.song.p5Song.duration()
       beatbox.initSongElements();
+      beatbox.canvas.setVisualElementsVisible(true)
     },
     loadFailed: function () {
       beatbox.song.isLoadSuccess = false;
