@@ -1,16 +1,14 @@
-//system
 var beatbox = {
   draw: function () {
-    //system
     if (this.canvas.background.redraw) {
       this.canvas.background.reset();
     }
     //song
     if (this.song.isLoaded) {
       if (this.song.positionAutoUpdate) {
-        if (this.song.isPlaying()) {
+        if (this.song.p5Song.isPlaying()) {
           this.htmlHelper.sliderList.sliders.songPositionSlider.value(
-            this.song.currentTime()
+            this.song.p5Song.currentTime()
           );
         } else {
           this.htmlHelper.sliderList.sliders.songPositionSlider.value(
@@ -18,9 +16,9 @@ var beatbox = {
           );
         }
       }
-      if (this.song.isPlaying() && !this.song.isMuted) {
+      if (this.song.p5Song.isPlaying() && !this.song.isMuted) {
         this.sound.currentVolume = this.htmlHelper.sliderList.sliders.volumeSlider.value();
-        this.song.setVolume(
+        this.song.p5Song.setVolume(
           this.htmlHelper.sliderList.sliders.volumeSlider.value() /
             this.htmlHelper.sliderList.sliders.volumeSlider.maxValue
         );
@@ -53,7 +51,7 @@ var beatbox = {
       this.canvas.colorBrightness,
     ];
 
-    if (this.song.isPlaying()) {
+    if (this.song.p5Song.isPlaying()) {
       this.canvas.spectrogram.nodes.push(
         new SoundHistoryNode(songVolume, currentColor)
       );
@@ -89,51 +87,51 @@ var beatbox = {
     }
   },
   initSongElements: function () {
-    this.htmlHelper.buttonList.buttons.songButton = createButton("Play");
-    this.htmlHelper.buttonList.buttons.songButton.mousePressed(
-      this.song.toggleSongPlayback
+    beatbox.htmlHelper.buttonList.buttons.songButton = createButton("Play");
+    beatbox.htmlHelper.buttonList.buttons.songButton.mousePressed(
+      beatbox.song.togglePlayback
     );
-    this.htmlHelper.buttonList.buttonListDiv.child(
-      this.buttonList.buttons.songButton
+    beatbox.htmlHelper.buttonList.buttonListDiv.child(
+      beatbox.htmlHelper.buttonList.buttons.songButton
     );
-    this.htmlHelper.buttonList.buttons.muteButton = createButton("Mute");
-    this.htmlHelper.buttonList.buttons.muteButton.mousePressed(
-      this.song.toggleMute
+    beatbox.htmlHelper.buttonList.buttons.muteButton = createButton("Mute");
+    beatbox.htmlHelper.buttonList.buttons.muteButton.mousePressed(
+      beatbox.song.toggleMute
     );
-    this.htmlHelper.buttonList.buttonListDiv.child(
-      this.htmlHelper.buttonList.buttons.muteButton
+    beatbox.htmlHelper.buttonList.buttonListDiv.child(
+      beatbox.htmlHelper.buttonList.buttons.muteButton
     );
     //sliders
-    this.htmlHelper.sliderList.sliders.songPositionSlider = createSlider(
+    beatbox.htmlHelper.sliderList.sliders.songPositionSlider = createSlider(
       0,
-      this.song.duration(),
+      beatbox.song.duration,
       0,
       1
     );
-    this.htmlHelper.sliderList.sliders.songPositionSlider.style(
+    beatbox.htmlHelper.sliderList.sliders.songPositionSlider.style(
       "width",
-      this.canvas.width + "px"
+      beatbox.canvas.width + "px"
     );
-    this.htmlHelper.sliderList.sliderListDiv.child(
-      this.htmlHelper.sliderList.sliders.songPositionSlider
+    beatbox.htmlHelper.sliderList.sliderListDiv.child(
+      beatbox.htmlHelper.sliderList.sliders.songPositionSlider
     );
 
-    this.sound.loadCurrentVolume();
-    this.htmlHelper.sliderList.sliders.volumeSlider = createSlider(
+    beatbox.sound.loadCurrentVolume();
+    beatbox.htmlHelper.sliderList.sliders.volumeSlider = createSlider(
       0,
-      this.htmlHelper.sliderList.sliders.volumeSlider.maxValue,
-      this.sound.currentVolume,
+      beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue,
+      beatbox.sound.currentVolume,
       1
     );
-    this.htmlHelper.sliderList.sliders.volumeSlider.style(
+    beatbox.htmlHelper.sliderList.sliders.volumeSlider.style(
       "width",
-      this.canvas.width + "px"
+      beatbox.canvas.width + "px"
     );
-    this.htmlHelper.sliderList.sliders.volumeSlider.mouseReleased(
-      this.sound.saveCurrentVolume
+    beatbox.htmlHelper.sliderList.sliders.volumeSlider.mouseReleased(
+      beatbox.sound.saveCurrentVolume
     );
-    this.htmlHelper.sliderList.SliderListDiv.child(
-      this.htmlHelper.sliderList.sliders.volumeSlider
+    beatbox.htmlHelper.sliderList.sliderListDiv.child(
+      beatbox.htmlHelper.sliderList.sliders.volumeSlider
     );
   },
   htmlHelper: {
@@ -187,13 +185,14 @@ var beatbox = {
       );
     },
     loadCurrentVolume: function () {
-      this.sound.currentVolume = getItem("currentVolume");
-      if (this.sound.currentVolume === null) {
-        this.sound.currentVolume = songMaxVolume;
+      this.currentVolume = getItem("currentVolume");
+      if (this.currentVolume === null) {
+        this.currentVolume = this.maxVolume;
       }
     },
   },
   song: {
+    p5Song: {},
     isLoaded: false,
     isLoadSuccess: true,
     isLoading: false,
@@ -203,57 +202,56 @@ var beatbox = {
     positionAutoUpdate: true,
     skipRate: 10, //number of seconds to skip forward or back,
     load: function (setVisualElementsVisible) {
-      this.isLoading = true;
+      beatbox.song.isLoading = true;
       setVisualElementsVisible(false);
     },
     loaded: function (initSongElements, setVisualElementsVisible) {
       initSongElements();
-      this.song.isLoaded = true;
-      this.song.isLoading = false;
+      beatbox.song.isLoaded = true;
+      beatbox.song.isLoading = false;
       setVisualElementsVisible(true);
     },
     loadFailed: function (setVisualElementsVisible) {
-      this.song.isLoadSuccess = false;
-      this.song.isLoading = false;
+      beatbox.song.isLoadSuccess = false;
+      beatbox.song.isLoading = false;
       setVisualElementsVisible(false);
     },
     ended: function () {
-      this.htmlHelper.buttonList.buttons.songButton.html("Play");
+      beatbox.htmlHelper.buttonList.buttons.songButton.html("Play");
     },
     togglePlayback: function () {
-      if (this.song.isLoading || !this.song.isLoadSuccess) {
+      if (beatbox.song.isLoading || !beatbox.song.isLoadSuccess) {
         return;
       }
-      if (this.song.isPlaying()) {
-        this.htmlHelper.buttonList.buttons.songButton.html("Play");
-        this.song.position = this.song.currentTime();
-        this.song.pause();
+      if (beatbox.song.p5Song.isPlaying()) {
+        beatbox.htmlHelper.buttonList.buttons.songButton.html("Play");
+        beatbox.song.position = beatbox.song.p5Song.currentTime();
+        beatbox.song.p5Song.pause();
       } else {
-        this.htmlHelper.buttonList.buttons.songButton.html("Pause");
-        this.song.play();
-        if (this.song.isMuted) {
-          this.song.setVolume(0);
+        beatbox.htmlHelper.buttonList.buttons.songButton.html("Pause");
+        beatbox.song.p5Song.play();
+        if (beatbox.song.isMuted) {
+          beatbox.song.p5Song.setVolume(0);
         } else {
-          this.song.setVolume(
-            this.sound.currentVolume /
-              this.htmlHelper.sliderList.sliders.volumeSlider.maxValue
+          beatbox.song.p5Song.setVolume(
+            beatbox.sound.currentVolume /
+              beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
           );
         }
-        this.song.OnEnded(this.song.songEnded);
+        beatbox.song.p5Song.OnEnded(beatbox.song.ended);
       }
     },
     toggleMute: function () {
-      if (isSongMuted) {
-        htmlHelper.volumeSlider.value(currentVolume);
-        song.setVolume(currentVolume / htmlHelper.volumeSliderMax);
-        htmlHelper.muteButton.html("Mute");
+      if (beatbox.song.isMuted) {
+        beatbox.htmlHelper.volumeSlider.value(beatbox.sound.currentVolume);
+        beatbox.song.setVolume(beatbox.sound.currentVolume / beatbox.htmlHelper.volumeSliderMax);
+        beatbox.htmlHelper.muteButton.html("Mute");
       } else {
-        htmlHelper.volumeSlider.value(0);
-        song.setVolume(0);
-        htmlHelper.muteButton.html("Unmute");
+        beatbox.htmlHelper.volumeSlider.value(0);
+        beatbox.song.setVolume(0);
+        beatbox.htmlHelper.muteButton.html("Unmute");
       }
-
-      isSongMuted = !isSongMuted;
+      beatbox.song.isMuted = !(beatbox.song.isMuted);
     },
   },
   canvas: {
@@ -266,14 +264,14 @@ var beatbox = {
     colorSaturation: {},
     colorBrightness: {},
     background: {
-      redraw: false, //when false, previous frames aren't overwritten. Set to true for 'colorful' bg.
+      redraw: true, //when false, previous frames aren't overwritten. Set to true for 'colorful' bg.
       reset: function () {
         background(0, 0, 0);
       },
       draw: function (spectrogram, height) {
         for (let i = 0; i < spectrogram.length; i++) {
-          stroke(spectrogram[i].col);
-          line(i, 0, i, this.canvas.height);
+          stroke(spectrogram[i].color);
+          line(i, 0, i, beatbox.canvas.height);
         }
       },
     },
@@ -389,8 +387,7 @@ var beatbox = {
       enabled: true,
       history: new Array(20).fill(1),
       toggle: function () {
-        this.canvas.frameRateDisplay.enabled = !this.canvas.frameRateDisplay
-          .enabled;
+        beatbox.canvas.frameRateDisplay.enabled = !(beatbox.canvas.frameRateDisplay.enabled);
       },
       draw: function (canvasHeight) {
         this.history.push(frameRate());
@@ -428,32 +425,32 @@ var beatbox = {
     preJump: function () {
       setTimeout(function () {
         Object.assign(this.song, { _playing: true });
-        this.song.playMode("restart");
+        this.song.p5Song.playMode("restart");
       }, 100);
-      this.song.stop();
-      this.song.playMode("sustain");
+      this.song.p5Song.stop();
+      this.song.p5Song.playMode("sustain");
     },
     keyPressed: function () {
       let jumpToTime = 0;
       switch (keyCode) {
         case LEFT_ARROW:
-          jumpToTime = this.song.currentTime() - numJumpSeconds;
+          jumpToTime = this.song.p5Song.currentTime() - numJumpSeconds;
           if (jumpToTime > 0) {
             preJump();
-            this.song.jump(jumpToTime);
+            this.song.p5Song.jump(jumpToTime);
           } else {
             preJump();
-            this.song.jump(0);
+            this.song.p5Song.jump(0);
           }
           checkKonamiCode("LEFT");
           break;
         case RIGHT_ARROW:
-          jumpToTime = this.song.currentTime() + numJumpSeconds;
-          if (jumpToTime < this.song.duration()) {
+          jumpToTime = this.song.p5Song.currentTime() + numJumpSeconds;
+          if (jumpToTime < this.song.duration) {
             preJump();
-            this.song.jump(jumpToTime);
+            this.song.p5Song.jump(jumpToTime);
           } else {
-            this.song.stop();
+            this.song.p5Song.stop();
           }
           this.interactivity.konami.checkKonamiCode("RIGHT");
           break;
@@ -509,14 +506,15 @@ var beatbox = {
 //setup() called just before draw()
 function setup() {
   beatbox.htmlHelper.init(beatbox.canvas.frameRateDisplay.toggle);
-  beatbox.song = loadSound(
+  beatbox.song.p5Song = loadSound(
     "sounds/Sunrise.mp3",
     beatbox.initSongElements,
     beatbox.canvas.setVisualElementsVisible(false),
     beatbox.canvas.setVisualElementsVisible(false)
   );
+  //beatbox.initSongElements()
   let canvas = createCanvas(beatbox.canvas.width, beatbox.canvas.height);
-  canvas.mousePressed(beatbox.song.togglePlayback);
+  canvas.mousePressed(beatbox.song.p5Song.togglePlayback);
   colorMode(HSB, 100);
   beatbox.canvas.spectrogram.nodes = new Array(this.width).fill({
     volume: beatbox.sound.maxVolume / 2,
