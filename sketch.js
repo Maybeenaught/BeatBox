@@ -1,5 +1,7 @@
 var beatbox = {
   setup: function () {
+    beatbox.canvas.p5Canvas = createCanvas(beatbox.canvas.width, beatbox.canvas.height);
+    beatbox.canvas.p5Canvas.mousePressed(beatbox.song.p5Song.togglePlayback);
     beatbox.htmlHelper.init(beatbox.canvas.frameRateDisplay.toggle);
     beatbox.song.p5Song = loadSound(
       "sounds/Sunrise.mp3",
@@ -7,10 +9,8 @@ var beatbox = {
       beatbox.canvas.setVisualElementsVisible(false),
       beatbox.canvas.setVisualElementsVisible(false)
     );
-    let canvas = createCanvas(beatbox.canvas.width, beatbox.canvas.height);
-    canvas.mousePressed(beatbox.song.p5Song.togglePlayback);
     colorMode(HSB, 100);
-    beatbox.canvas.spectrogram.nodes = new Array(this.width).fill({
+    beatbox.canvas.spectrogram.nodes = new Array(beatbox.canvas.width).fill({
       volume: beatbox.sound.maxVolume / 2,
       color: [0, 0, 0],
     });
@@ -36,7 +36,7 @@ var beatbox = {
         }
       }
       if (beatbox.song.p5Song.isPlaying() && !beatbox.song.isMuted) {
-        beatbox.sound.currentVolume = this.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value();
+        beatbox.sound.currentVolume = beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value();
         beatbox.song.p5Song.setVolume(
           beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() /
           beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
@@ -77,7 +77,7 @@ var beatbox = {
       });
     } else {
       beatbox.canvas.spectrogram.nodes.push({
-        volume: this.sound.maxVolume / 2,
+        volume: beatbox.sound.maxVolume / 2,
         color: [0, 0, 0],
       });
     }
@@ -182,10 +182,10 @@ var beatbox = {
       beatbox.htmlHelper.sliderList.sliderListDiv = createDiv();
       beatbox.htmlHelper.buttonList.buttons.frameRateButton = createButton("FR");
       beatbox.htmlHelper.canvasDiv.class("mediaPlayer"); //set the html class
-      beatbox.htmlHelper.canvasDiv.child(this.canvas);
+      beatbox.htmlHelper.canvasDiv.child(beatbox.canvas.p5Canvas);
       beatbox.htmlHelper.interactivityDiv.class("interactivity");
-      beatbox.htmlHelper.interactivityDiv.child(this.buttonList.buttonListDiv);
-      beatbox.htmlHelper.interactivityDiv.child(this.sliderList.sliderListDiv);
+      beatbox.htmlHelper.interactivityDiv.child(beatbox.htmlHelper.buttonList.buttonListDiv);
+      beatbox.htmlHelper.interactivityDiv.child(beatbox.htmlHelper.sliderList.sliderListDiv);
       beatbox.htmlHelper.buttonList.buttonListDiv.class("buttonList");
       beatbox.htmlHelper.buttonList.buttonListDiv.child(
         beatbox.htmlHelper.buttonList.buttons.frameRateButton
@@ -278,6 +278,7 @@ var beatbox = {
   canvas: {
     height: 660,
     width: 660,
+    p5Canvas: {},
     lowEnergy: {},
     highEnergy: {},
     totalEnergy: {},
@@ -302,9 +303,9 @@ var beatbox = {
       draw: function (maxVolume, colorHue) {
         noFill();
         beginShape();
-        for (let i = 0; i < this.nodes.length; i++) {
+        for (let i = 0; i < beatbox.canvas.spectrogram.nodes.length; i++) {
           let y = map(
-            this.nodes[i].volume,
+            beatbox.canvas.spectrogram.nodes[i].volume,
             0,
             maxVolume,
             height * 0.6,
@@ -413,7 +414,7 @@ var beatbox = {
       draw: function (canvasHeight) {
         beatbox.canvas.frameRateDisplay.history.push(frameRate());
         let avgFr = 0;
-        for (let i = 0; i < this.history.length; i++) {
+        for (let i = 0; i < beatbox.canvas.frameRateDisplay.history.length; i++) {
           avgFr += beatbox.canvas.frameRateDisplay.history[i];
         }
         avgFr /= beatbox.canvas.frameRateDisplay.history.length;
@@ -445,8 +446,8 @@ var beatbox = {
     //https://github.com/processing/p5.js-sound/issues/372
     preJump: function () {
       setTimeout(function () {
-        Object.assign(this.song, { _playing: true });
-        this.song.p5Song.playMode("restart");
+        Object.assign(beatbox.song.p5Song, { _playing: true });
+        beatbox.song.p5Song.playMode("restart");
       }, 100);
       beatbox.song.p5Song.stop();
       beatbox.song.p5Song.playMode("sustain");
