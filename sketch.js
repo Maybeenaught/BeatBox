@@ -1,8 +1,8 @@
 var beatbox = {
   setup: function () {
     beatbox.canvas.p5Canvas = createCanvas(beatbox.canvas.width, beatbox.canvas.height);
-    beatbox.canvas.p5Canvas.mousePressed(beatbox.song.p5Song.togglePlayback);
-    beatbox.htmlHelper.init(beatbox.canvas.frameRateDisplay.toggle);
+    beatbox.canvas.p5Canvas.mousePressed(beatbox.song.togglePlayback);
+    beatbox.htmlHelper.init();
     beatbox.song.p5Song = loadSound(
       "sounds/Sunrise.mp3",
       beatbox.song.loaded,
@@ -176,7 +176,7 @@ var beatbox = {
         },
       },
     },
-    init: function (toggleFRFunction) {
+    init: function () {
       beatbox.htmlHelper.canvasDiv = createDiv();
       beatbox.htmlHelper.interactivityDiv = createDiv();
       beatbox.htmlHelper.buttonList.buttonListDiv = createDiv();
@@ -191,7 +191,7 @@ var beatbox = {
       beatbox.htmlHelper.buttonList.buttonListDiv.child(
         beatbox.htmlHelper.buttonList.buttons.frameRateButton
       );
-      beatbox.htmlHelper.buttonList.buttons.frameRateButton.mousePressed(toggleFRFunction);
+      beatbox.htmlHelper.buttonList.buttons.frameRateButton.mousePressed(beatbox.canvas.frameRateDisplay.toggle);
       beatbox.htmlHelper.sliderList.sliderListDiv.class("sliderList");
     },
   },
