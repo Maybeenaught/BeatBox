@@ -1,525 +1,593 @@
-//system
-let canvasSize = 660;
-let colorfulBackgroundOn = true; //is set to false when redrawBackground is true
-let spectrogramOn = true;
-let fractalOn = true;
-let frameRateOn = false;
-let redrawBackground = true; //when false, previous frames aren't overwritten
-let htmlHelper;
-let konamiCode = [];
-
-//song
-let song;
-let isSongLoaded = false;
-let isSongLoadSuccess = true;
-let isSongLoading = false;
-let isSongMuted = false;
-let songMaxVolume = 1; //range 0-1 that determines the song's volume
-let songPosition = 0;
-let songPositionAutoUpdate = true;
-let numJumpSeconds = 10; //number of seconds to skip forward or back
-
-//sound
-let amp;
-let fft; //frequency fourier transform
-let numFreqBands = 128;
-let spectrogram = [];
-let currentVolume = songMaxVolume; //volume set from slider
-
-//fractal
-let fractalAngleHistory = [];
-let fractalAngleHistoryCount = 3; //determines the smoothness of the fractal movement
-let heightDivider = 8; //determines starting heights of fractals relative to window height
-let rotateOffset = 0;
-
-//frame rate
-let fpsHistory = [];
-
-class HtmlHelper {
-    canvasDiv = createDiv();
-    interactivityDiv = createDiv(); //div to hold buttons, sliders, etc.
-    
-    //buttons
-    buttonListDiv = createDiv(); //div to hold buttons
-    frameRateButton = createButton("FR");
-    songButton;
-    muteButton;
-
-    //sliders
-    sliderListDiv = createDiv();
-    songPositionSlider;
-    volumeSlider;
-    volumeSliderMax = 100;
-
-    //called in setup()
-    constructor(canvas) {
-        this.canvasDiv.class('mediaPlayer'); //set the html class
-        this.canvasDiv.child(canvas);
-
-        this.interactivityDiv.class('interactivity');
-        this.interactivityDiv.child(this.buttonListDiv);
-        this.interactivityDiv.child(this.sliderListDiv);
-
-        this.buttonListDiv.class('buttonList');
-        this.buttonListDiv.child(this.frameRateButton);
-        this.frameRateButton.mousePressed(toggleFrameRateDisplay);
-
-        this.sliderListDiv.class('sliderList');
+var beatbox = {
+  setup: function () {
+    beatbox.canvas.p5Canvas = createCanvas(
+      beatbox.canvas.width,
+      beatbox.canvas.height
+    );
+    beatbox.canvas.p5Canvas.mousePressed(beatbox.song.togglePlayback);
+    beatbox.htmlHelper.init();
+    beatbox.song.p5Song = loadSound(
+      "sounds/Sunrise.mp3",
+      beatbox.song.loaded,
+      beatbox.canvas.setVisualElementsVisible(false),
+      beatbox.canvas.setVisualElementsVisible(false)
+    );
+    colorMode(HSB, 100);
+    beatbox.canvas.spectrogram.nodes = new Array(beatbox.canvas.width).fill({
+      volume: beatbox.sound.maxVolume / 2,
+      color: [0, 0, 0],
+    });
+    beatbox.canvas.fractal.angleHistory = new Array(
+      beatbox.canvas.fractal.angleHistoryCount
+    ).fill(0);
+  },
+  draw: function () {
+    if (beatbox.canvas.background.redraw) {
+      beatbox.canvas.background.reset();
     }
-
-    //create elements after song has loaded
-    initSongElements() {
-        //buttons
-        this.songButton = createButton("Play");
-        this.songButton.mousePressed(toggleSongPlayback);
-        this.buttonListDiv.child(this.songButton);
-
-        this.muteButton = createButton("Mute");
-        this.muteButton.mousePressed(toggleMute);
-        this.buttonListDiv.child(this.muteButton);
-    
-        //sliders
-        this.songPositionSlider = createSlider(0, song.duration(), 0, 1);
-        this.songPositionSlider.style('width', canvasSize + "px");
-        this.sliderListDiv.child(this.songPositionSlider);
-
-        loadCurrentVolume();
-        this.volumeSlider = createSlider(0, this.volumeSliderMax, currentVolume, 1);
-        this.volumeSlider.style('width', canvasSize + "px");
-        this.volumeSlider.mouseReleased(saveCurrentVolume);
-        this.sliderListDiv.child(this.volumeSlider);
-    }
-}
-
-class SoundHistoryNode {
-    constructor(volume, col) {
-        this.volume = volume; //Used to draw spectrogram
-        this.col = col; //Used to draw background colors
-    }
-}
-
-function songLoaded() {
-    htmlHelper.initSongElements();
-    isSongLoaded = true;
-    isSongLoading = false;
-    enableVisualFeatures(true);
-}
-
-function songLoadFailed() {
-    isSongLoadSuccess = false;
-    isSongLoading = false;
-    enableVisualFeatures(false);
-}
-
-function songLoading() {
-    isSongLoading = true;
-    enableVisualFeatures(false);
-}
-
-function enableVisualFeatures(isEnable) {
-    colorfulBackgroundOn = isEnable;
-    spectrogramOn = isEnable;
-    fractalOn = isEnable;
-}
-
-function songEnded() {
-    htmlHelper.songButton.html("Play");
-}
-
-function toggleSongPlayback() {
-    if(isSongLoading || !isSongLoadSuccess) {
-        return;
-    }
-
-    if(song.isPlaying()) {
-        htmlHelper.songButton.html("Play");
-        songPosition = song.currentTime();
-        song.pause();
-    }
-    else {
-        htmlHelper.songButton.html("Pause");
-        song.play();
-        if(isSongMuted) {
-            song.setVolume(0);
+    //song
+    if (beatbox.song.isLoaded) {
+      if (beatbox.song.positionAutoUpdate) {
+        if (beatbox.song.p5Song.isPlaying()) {
+          beatbox.htmlHelper.sliderList.sliders.songPositionSlider.value(
+            beatbox.song.p5Song.currentTime()
+          );
+        } else {
+          beatbox.htmlHelper.sliderList.sliders.songPositionSlider.value(
+            beatbox.song.position
+          );
         }
-        else {
-            song.setVolume(currentVolume / htmlHelper.volumeSliderMax);
-        }
-        song.onended(songEnded);
-    }
-}
-
-function toggleMute() {
-    if(isSongMuted) {
-        htmlHelper.volumeSlider.value(currentVolume);
-        song.setVolume(currentVolume / htmlHelper.volumeSliderMax);
-        htmlHelper.muteButton.html("Mute");
-    }
-    else {
-        htmlHelper.volumeSlider.value(0);
-        song.setVolume(0);
-        htmlHelper.muteButton.html("Unmute");
-    }
-
-    isSongMuted = !isSongMuted;
-}
-
-function toggleFrameRateDisplay() {
-    frameRateOn = !frameRateOn;
-}
-
-//This method exists to mitigate bugs caused by the jump() function
-//Shoutout to joepdooper on this thread for finding this solution:
-//https://github.com/processing/p5.js-sound/issues/372
-function preJump() {
-    setTimeout(function() {
-        Object.assign(song, {_playing: true});
-        song.playMode('restart');
-      }, 100);
-    song.stop();
-    song.playMode('sustain');
-}
-
-function keyPressed() {
-    let jumpToTime = 0;
-    switch(keyCode) {
-        case LEFT_ARROW:
-            jumpToTime = song.currentTime() - numJumpSeconds;
-            if(jumpToTime > 0) {
-                preJump();
-                song.jump(jumpToTime);
-            }
-            else {
-                preJump();
-                song.jump(0);
-            }
-
-            checkKonamiCode("LEFT");
-            break;
-
-        case RIGHT_ARROW:
-            jumpToTime = song.currentTime() + numJumpSeconds;
-            if(jumpToTime < song.duration()) {
-                preJump();
-                song.jump(jumpToTime);
-            }
-            else {
-                song.stop();
-            }
-
-            checkKonamiCode("RIGHT");
-            break;
-
-        case UP_ARROW:
-            checkKonamiCode("UP");
-            break;
-
-        case DOWN_ARROW:
-            checkKonamiCode("DOWN");
-            break;
-
-        case 65: //a
-            checkKonamiCode("A");
-            break;
-
-        case 66: //b
-            checkKonamiCode("B");
-            break;
-
-        case 32: //spacebar
-            toggleSongPlayback();
-            break;
-
-        default:
-            checkKonamiCode("");
-            break;
-    }
-
-    return false; //prevent any default window behaviour
-}
-
-function checkKonamiCode(newInput) {
-    konamiCode.push(newInput);
-    konamiCode.splice(0, 1);
-
-    if(newInput !== "A") {
-        return;
-    }
-
-    if(
-           konamiCode[0] === "UP"
-        && konamiCode[1] === "UP"
-        && konamiCode[2] === "DOWN"
-        && konamiCode[3] === "DOWN"
-        && konamiCode[4] === "LEFT"
-        && konamiCode[5] === "RIGHT"
-        && konamiCode[6] === "LEFT"
-        && konamiCode[7] === "RIGHT"
-        && konamiCode[8] === "B"
-        && konamiCode[9] === "A"
+      }
+      if (beatbox.song.p5Song.isPlaying() && !beatbox.song.isMuted) {
+        beatbox.sound.currentVolume = beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value();
+        beatbox.song.p5Song.setVolume(
+          beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() /
+            beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
+        );
+      } else if (
+        beatbox.song.isMuted &&
+        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() !=
+          0
       ) {
-        redrawBackground = !redrawBackground;
-        resetColorfulBackground();
+        beatbox.song.toggleMute();
+      }
+    } else if (beatbox.song.isLoading) {
+      printMessage("Loading...");
+    } else if (!beatbox.song.isLoadSuccess) {
+      printMessage("Song failed to load");
     }
-}
+    //get frequency info
+    beatbox.sound.fft.analyze();
+    //get volume info
+    let songVolume = beatbox.sound.amp.getLevel();
+    beatbox.canvas.lowEnergy = beatbox.sound.fft.getEnergy(40, 180);
+    beatbox.canvas.highEnergy = beatbox.sound.fft.getEnergy(10000, 15000);
+    beatbox.canvas.totalEnergy = beatbox.sound.fft.getEnergy(40, 15000);
 
-function resetColorfulBackground(reset = !colorfulBackgroundOn) {
-    colorfulBackgroundOn = reset;
-    background(0, 0, 0);
-}
+    //set color variables from vol and freq info
+    beatbox.canvas.colorHue = map(beatbox.canvas.highEnergy, 0, 100, 0, 100);
+    beatbox.canvas.colorSaturation = map(
+      beatbox.canvas.lowEnergy,
+      0,
+      255,
+      50,
+      100
+    );
+    beatbox.canvas.colorBrightness = map(
+      beatbox.canvas.totalEnergy,
+      0,
+      255,
+      0,
+      100
+    );
+    let currentColor = [
+      beatbox.canvas.colorHue,
+      beatbox.canvas.colorSaturation,
+      beatbox.canvas.colorBrightness,
+    ];
 
-function saveCurrentVolume() {
-    storeItem('currentVolume', htmlHelper.volumeSlider.value());
-}
-
-function loadCurrentVolume() {
-    currentVolume = getItem('currentVolume');
-    if(currentVolume === null) {
-        currentVolume = songMaxVolume;
+    if (beatbox.song.p5Song.isPlaying()) {
+      beatbox.canvas.spectrogram.nodes.push({
+        volume: songVolume,
+        color: currentColor,
+      });
+    } else {
+      beatbox.canvas.spectrogram.nodes.push({
+        volume: beatbox.sound.maxVolume / 2,
+        color: [0, 0, 0],
+      });
     }
-}
+    if (beatbox.canvas.background.redraw) {
+      beatbox.canvas.background.draw(
+        beatbox.canvas.spectrogram.nodes,
+        beatbox.canvas.height
+      );
+    }
+    if (beatbox.canvas.spectrogram.enabled) {
+      beatbox.canvas.spectrogram.draw(
+        beatbox.sound.maxVolume,
+        beatbox.canvas.colorHue
+      );
+    }
+    //remove the oldest soundHistoryNode from spectrogram
+    beatbox.canvas.spectrogram.nodes.splice(0, 1);
+    if (beatbox.canvas.fractal.enabled) {
+      beatbox.canvas.fractal.draw();
+    }
+    if (beatbox.canvas.frameRateDisplay.enabled) {
+      beatbox.canvas.frameRateDisplay.draw(beatbox.canvas.height);
+    }
+  },
+  initSongElements: function () {
+    beatbox.htmlHelper.buttonList.buttons.songButton = createButton("Play");
+    beatbox.htmlHelper.buttonList.buttons.songButton.mousePressed(
+      beatbox.song.togglePlayback
+    );
+    beatbox.htmlHelper.buttonList.buttonListDiv.child(
+      beatbox.htmlHelper.buttonList.buttons.songButton
+    );
+    beatbox.htmlHelper.buttonList.buttons.muteButton = createButton("Mute");
+    beatbox.htmlHelper.buttonList.buttons.muteButton.mousePressed(
+      beatbox.song.toggleMute
+    );
+    beatbox.htmlHelper.buttonList.buttonListDiv.child(
+      beatbox.htmlHelper.buttonList.buttons.muteButton
+    );
+    //sliders
+    beatbox.htmlHelper.sliderList.sliders.songPositionSlider = createSlider(
+      0,
+      beatbox.song.p5Song.duration(),
+      0,
+      1
+    );
+    beatbox.htmlHelper.sliderList.sliders.songPositionSlider.style(
+      "width",
+      beatbox.canvas.width + "px"
+    );
+    beatbox.htmlHelper.sliderList.sliderListDiv.child(
+      beatbox.htmlHelper.sliderList.sliders.songPositionSlider
+    );
+
+    beatbox.sound.loadCurrentVolume();
+    beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject = createSlider(
+      0,
+      beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue,
+      beatbox.sound.currentVolume,
+      1
+    );
+    beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.style(
+      "width",
+      beatbox.canvas.width + "px"
+    );
+    beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.mouseReleased(
+      beatbox.sound.saveCurrentVolume
+    );
+    beatbox.htmlHelper.sliderList.sliderListDiv.child(
+      beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject
+    );
+  },
+  htmlHelper: {
+    canvasDiv: {},
+    interactivityDiv: {}, //div to hold buttons, sliders, etc.
+    buttonList: {
+      buttonListDiv: {},
+      buttons: {
+        frameRateButton: {},
+        songButton: {},
+        muteButton: {},
+      },
+    },
+    sliderList: {
+      sliderListDiv: {},
+      sliders: {
+        songPositionSlider: {},
+        volumeSlider: {
+          sliderObject: {},
+          maxValue: 100,
+        },
+      },
+    },
+    init: function () {
+      beatbox.htmlHelper.canvasDiv = createDiv();
+      beatbox.htmlHelper.interactivityDiv = createDiv();
+      beatbox.htmlHelper.buttonList.buttonListDiv = createDiv();
+      beatbox.htmlHelper.sliderList.sliderListDiv = createDiv();
+      beatbox.htmlHelper.buttonList.buttons.frameRateButton = createButton(
+        "FR"
+      );
+      beatbox.htmlHelper.canvasDiv.class("mediaPlayer"); //set the html class
+      beatbox.htmlHelper.canvasDiv.child(beatbox.canvas.p5Canvas);
+      beatbox.htmlHelper.interactivityDiv.class("interactivity");
+      beatbox.htmlHelper.interactivityDiv.child(
+        beatbox.htmlHelper.buttonList.buttonListDiv
+      );
+      beatbox.htmlHelper.interactivityDiv.child(
+        beatbox.htmlHelper.sliderList.sliderListDiv
+      );
+      beatbox.htmlHelper.buttonList.buttonListDiv.class("buttonList");
+      beatbox.htmlHelper.buttonList.buttonListDiv.child(
+        beatbox.htmlHelper.buttonList.buttons.frameRateButton
+      );
+      beatbox.htmlHelper.buttonList.buttons.frameRateButton.mousePressed(
+        beatbox.canvas.frameRateDisplay.toggle
+      );
+      beatbox.htmlHelper.sliderList.sliderListDiv.class("sliderList");
+    },
+  },
+  sound: {
+    amp: new p5.Amplitude(),
+    fft: new p5.FFT(0.9, 128),
+    maxVolume: 1,
+    currentVolume: 1,
+    saveCurrentVolume: function () {
+      storeItem(
+        "currentVolume",
+        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value()
+      );
+    },
+    loadCurrentVolume: function () {
+      beatbox.sound.currentVolume = getItem("currentVolume");
+      if (beatbox.sound.currentVolume === null) {
+        beatbox.sound.currentVolume = beatbox.sound.maxVolume;
+      }
+    },
+  },
+  song: {
+    p5Song: {},
+    isLoaded: false,
+    isLoadSuccess: true,
+    isLoading: false,
+    isMuted: false,
+    duration: 0,
+    position: 0,
+    positionAutoUpdate: true,
+    skipRate: 10, //number of seconds to skip forward or back,
+    load: function () {
+      beatbox.song.isLoading = true;
+    },
+    loaded: function () {
+      beatbox.song.isLoaded = true;
+      beatbox.song.isLoading = false;
+      beatbox.song.duration = beatbox.song.p5Song.duration();
+      beatbox.initSongElements();
+      beatbox.canvas.setVisualElementsVisible(true);
+    },
+    loadFailed: function () {
+      beatbox.song.isLoadSuccess = false;
+      beatbox.song.isLoading = false;
+    },
+    ended: function () {
+      beatbox.htmlHelper.buttonList.buttons.songButton.html("Play");
+    },
+    togglePlayback: function () {
+      if (beatbox.song.isLoading || !beatbox.song.isLoadSuccess) {
+        return;
+      }
+      if (beatbox.song.p5Song.isPlaying()) {
+        beatbox.htmlHelper.buttonList.buttons.songButton.html("Play");
+        beatbox.song.position = beatbox.song.p5Song.currentTime();
+        beatbox.song.p5Song.pause();
+      } else {
+        beatbox.htmlHelper.buttonList.buttons.songButton.html("Pause");
+        beatbox.song.p5Song.play();
+        if (beatbox.song.isMuted) {
+          beatbox.song.p5Song.setVolume(0);
+        } else {
+          beatbox.song.p5Song.setVolume(
+            beatbox.sound.currentVolume /
+              beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
+          );
+        }
+        beatbox.song.p5Song.onended(beatbox.song.ended);
+      }
+    },
+    toggleMute: function () {
+      if (beatbox.song.isMuted) {
+        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value(
+          beatbox.sound.currentVolume
+        );
+        beatbox.song.p5Song.setVolume(
+          beatbox.sound.currentVolume /
+            beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
+        );
+        beatbox.htmlHelper.buttonList.buttons.muteButton.html("Mute");
+      } else {
+        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value(
+          0
+        );
+        beatbox.song.p5Song.setVolume(0);
+        beatbox.htmlHelper.buttonList.buttons.muteButton.html("Unmute");
+      }
+      beatbox.song.isMuted = !beatbox.song.isMuted;
+    },
+  },
+  canvas: {
+    height: 660,
+    width: 660,
+    p5Canvas: {},
+    lowEnergy: {},
+    highEnergy: {},
+    totalEnergy: {},
+    colorHue: {},
+    colorSaturation: {},
+    colorBrightness: {},
+    background: {
+      redraw: true, //when false, previous frames aren't overwritten. Set to true for 'colorful' bg.
+      reset: function () {
+        background(0, 0, 0);
+      },
+      draw: function (spectrogram, height) {
+        for (let i = 0; i < spectrogram.length; i++) {
+          stroke(spectrogram[i].color);
+          line(i, 0, i, beatbox.canvas.height);
+        }
+      },
+    },
+    spectrogram: {
+      enabled: true,
+      nodes: [],
+      draw: function (maxVolume, colorHue) {
+        noFill();
+        beginShape();
+        for (let i = 0; i < beatbox.canvas.spectrogram.nodes.length; i++) {
+          let y = map(
+            beatbox.canvas.spectrogram.nodes[i].volume,
+            0,
+            maxVolume,
+            height * 0.6,
+            height * 0.4
+          );
+          let oppositeHue = colorHue + 50;
+          if (oppositeHue > 99) {
+            oppositeHue %= 100;
+          }
+          stroke(oppositeHue, 100, 100);
+          vertex(i, y);
+        }
+        endShape();
+      },
+    },
+    fractal: {
+      enabled: true,
+      angleHistory: [],
+      angleHistoryCount: 3, //determines the smoothness of the fractal movement
+      heightDivider: 8, //determines starting heights of fractals relative to window height
+      rotateOffset: 0,
+      resolution: 0,
+      colorResolution: 0,
+      draw: function () {
+        //TODO: find a way to normalize totalEnergy
+        beatbox.canvas.fractal.resolution = map(
+          beatbox.canvas.totalEnergy,
+          0,
+          100,
+          16,
+          10
+        ); //more energy => finer resolution
+        beatbox.canvas.fractal.colorResolution = map(
+          beatbox.canvas.totalEnergy,
+          0,
+          255,
+          0,
+          50
+        );
+        //average the current fractal angle with previous angles for a smoother transition
+        let currentFractalAngle = map(
+          beatbox.sound.amp.getLevel(),
+          0,
+          beatbox.sound.currentVolume /
+            beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue,
+          0,
+          PI
+        );
+        beatbox.canvas.fractal.angleHistory.push(currentFractalAngle);
+        let fractalAngleAvg = 0;
+        for (let i = 0; i < beatbox.canvas.fractal.angleHistory.length; i++) {
+          fractalAngleAvg += beatbox.canvas.fractal.angleHistory[i];
+        }
+        fractalAngleAvg /= beatbox.canvas.fractal.angleHistory.length;
+        beatbox.canvas.fractal.angleHistory.splice(0, 1);
+        //draw the fractals
+        //TODO: draw both fractals at once for better performance
+        stroke(beatbox.canvas.colorHue, 100, 100);
+        //bottom fractal
+        push();
+        translate(beatbox.canvas.width / 2, beatbox.canvas.height);
+        beatbox.canvas.fractal.drawBranch(
+          beatbox.canvas.width / beatbox.canvas.fractal.heightDivider,
+          fractalAngleAvg,
+          beatbox.canvas.colorHue
+        );
+        pop();
+        //top fractal
+        push();
+        translate(width / 2, 0);
+        scale(1, -1);
+        beatbox.canvas.fractal.drawBranch(
+          beatbox.canvas.width / beatbox.canvas.fractal.heightDivider,
+          fractalAngleAvg,
+          beatbox.canvas.colorHue
+        );
+        pop();
+      },
+      //  drawBranch() is a Recursive function used to draw fractals
+      //  len: branch length
+      //  fractalAngle: angle between child branches
+      //  fractalResolution: branch length pixel count used to break out of the recursion
+      //  branchColor: the branches color
+      //  colorResolution: the offset around the color wheel that the child branch will have relative to its parent
+      drawBranch: function (len, fractalAngle, branchColor) {
+        //draw the branch
+        stroke(branchColor, 100, 100);
+        line(0, 0, 0, -len);
+        //Offset the child branch a certain amount around the color wheel
+        branchColor += beatbox.canvas.fractal.colorResolution;
+        if (branchColor > 99) {
+          branchColor %= 100;
+        }
+        //if the current branch length isn't too small, continue recursing
+        if (len > beatbox.canvas.fractal.resolution) {
+          translate(0, -len);
+          //right branch
+          push();
+          rotate(fractalAngle);
+          beatbox.canvas.fractal.drawBranch(
+            len * 0.67,
+            fractalAngle,
+            branchColor
+          );
+          pop();
+          //left branch
+          push();
+          rotate(-fractalAngle);
+          beatbox.canvas.fractal.drawBranch(
+            len * 0.67,
+            fractalAngle,
+            branchColor
+          );
+          pop();
+        }
+      },
+    },
+    frameRateDisplay: {
+      enabled: true,
+      history: new Array(20).fill(1),
+      toggle: function () {
+        beatbox.canvas.frameRateDisplay.enabled = !beatbox.canvas
+          .frameRateDisplay.enabled;
+      },
+      draw: function (canvasHeight) {
+        beatbox.canvas.frameRateDisplay.history.push(frameRate());
+        let avgFr = 0;
+        for (
+          let i = 0;
+          i < beatbox.canvas.frameRateDisplay.history.length;
+          i++
+        ) {
+          avgFr += beatbox.canvas.frameRateDisplay.history[i];
+        }
+        avgFr /= beatbox.canvas.frameRateDisplay.history.length;
+        textAlign(LEFT);
+        fill(100, 0, 100);
+        stroke(0, 100, 0);
+        textSize(12);
+        text("FPS: " + avgFr.toFixed(2), 10, canvasHeight - 10);
+        beatbox.canvas.frameRateDisplay.history.splice(0, 1);
+      },
+    },
+    printMessage: function (message) {
+      background(0, 0, 0);
+      stroke(0, 0, 100);
+      fill(0, 0, 100);
+      textSize(60);
+      textAlign(CENTER, CENTER);
+      text(message, width / 2, height / 2);
+    },
+    setVisualElementsVisible(visible) {
+      beatbox.canvas.background.enabled = visible;
+      beatbox.canvas.spectrogram.enabled = visible;
+      beatbox.canvas.fractal.enabled = visible;
+    },
+  },
+  interactivity: {
+    timeSkipLength: 10,
+    //This method exists to mitigate bugs caused by the jump() function
+    //Shoutout to joepdooper on this thread for finding this solution:
+    //https://github.com/processing/p5.js-sound/issues/372
+    preJump: function () {
+      setTimeout(function () {
+        Object.assign(beatbox.song.p5Song, { _playing: true });
+        beatbox.song.p5Song.playMode("restart");
+      }, 100);
+      beatbox.song.p5Song.stop();
+      beatbox.song.p5Song.playMode("sustain");
+    },
+    keyPressed: function () {
+      let jumpToTime = 0;
+      switch (keyCode) {
+        case LEFT_ARROW:
+          jumpToTime =
+            beatbox.song.p5Song.currentTime() -
+            beatbox.interactivity.timeSkipLength;
+          if (jumpToTime > 0) {
+            beatbox.interactivity.preJump();
+            beatbox.song.p5Song.jump(jumpToTime);
+          } else {
+            beatbox.interactivity.preJump();
+            beatbox.song.p5Song.jump(0);
+          }
+          beatbox.interactivity.konami.checkKonamiCode("LEFT");
+          break;
+        case RIGHT_ARROW:
+          jumpToTime =
+            beatbox.song.p5Song.currentTime() +
+            beatbox.interactivity.timeSkipLength;
+          if (jumpToTime < beatbox.song.duration) {
+            beatbox.interactivity.preJump();
+            beatbox.song.p5Song.jump(jumpToTime);
+          } else {
+            beatbox.song.p5Song.stop();
+          }
+          beatbox.interactivity.konami.checkKonamiCode("RIGHT");
+          break;
+        case UP_ARROW:
+          beatbox.interactivity.konami.checkKonamiCode("UP");
+          break;
+        case DOWN_ARROW:
+          beatbox.interactivity.konami.checkKonamiCode("DOWN");
+          break;
+        case 65: //a
+          beatbox.interactivity.konami.checkKonamiCode("A");
+          break;
+        case 66: //b
+          beatbox.interactivity.konami.checkKonamiCode("B");
+          break;
+        case 32: //spacebar
+          beatbox.song.togglePlayback();
+          break;
+        default:
+          beatbox.interactivity.konami.checkKonamiCode("");
+          break;
+      }
+      return false; //prevent any default window behaviour
+    },
+    konami: {
+      code: new Array(10).fill(""),
+      checkKonamiCode: function (input) {
+        beatbox.interactivity.konami.code.push(input);
+        beatbox.interactivity.konami.code.splice(0, 1);
+        if (input !== "A") {
+          return;
+        }
+        if (
+          beatbox.interactivity.konami.code[0] === "UP" &&
+          beatbox.interactivity.konami.code[1] === "UP" &&
+          beatbox.interactivity.konami.code[2] === "DOWN" &&
+          beatbox.interactivity.konami.code[3] === "DOWN" &&
+          beatbox.interactivity.konami.code[4] === "LEFT" &&
+          beatbox.interactivity.konami.code[5] === "RIGHT" &&
+          beatbox.interactivity.konami.code[6] === "LEFT" &&
+          beatbox.interactivity.konami.code[7] === "RIGHT" &&
+          beatbox.interactivity.konami.code[8] === "B" &&
+          beatbox.interactivity.konami.code[9] === "A"
+        ) {
+          beatbox.canvas.background.redraw = !beatbox.canvas.background.redraw;
+          beatbox.canvas.background.reset();
+        }
+      },
+    },
+  },
+};
 
 //setup() called just before draw()
 function setup() {
-
-    //song (called first for quicker execution)
-    song = loadSound("sounds/Sunrise.mp3", songLoaded, songLoadFailed, songLoading);
-
-    //system
-    let canvas = createCanvas(canvasSize, canvasSize);
-    canvas.mousePressed(toggleSongPlayback);
-    htmlHelper = new HtmlHelper(canvas);
-    konamiCode = new Array(10).fill("");
-    colorMode(HSB, 100);
-    if(!redrawBackground) {
-        resetColorfulBackground(false);
-    }
-
-    //sound
-    amp = new p5.Amplitude();
-    fft = new p5.FFT(0.9, numFreqBands);
-    spectrogram = new Array(width).fill(new SoundHistoryNode(songMaxVolume / 2, [0, 0, 0]));
-
-    //fractal
-    fractalAngleHistory = new Array(fractalAngleHistoryCount).fill(0);
-
-    //frame rate
-    fpsHistory = new Array(20).fill(1);
+  beatbox.setup();
 }
-
 //draw() is called repeatedly. It defaults at 60fps but adjusts automatically based on CPU load
 function draw() {
-    //system
-    if(!colorfulBackgroundOn && redrawBackground) {
-        background(0, 0, 0);
-    }
-
-    //song
-    if(isSongLoaded) {
-        if(songPositionAutoUpdate) {
-            if(song.isPlaying()) {
-                htmlHelper.songPositionSlider.value(song.currentTime());
-            }
-            else {
-                htmlHelper.songPositionSlider.value(songPosition);
-            }
-        }
-        
-        if(song.isPlaying() && !isSongMuted) {
-            currentVolume = htmlHelper.volumeSlider.value();
-            song.setVolume(htmlHelper.volumeSlider.value() / htmlHelper.volumeSliderMax);
-        }
-        else if (isSongMuted && htmlHelper.volumeSlider.value() != 0) {
-            toggleMute();
-        }
-    }
-    else if(isSongLoading) {
-        printMessage("Loading...");
-    }
-    else if(!isSongLoadSuccess) {
-        printMessage("Song failed to load");
-    }
-    
-    //get frequency info
-    fft.analyze();
-    let lowEnergy = fft.getEnergy(40, 180);
-    let highEnergy = fft.getEnergy(10000, 15000);
-    let totalEnergy = fft.getEnergy(40, 15000);
-
-    //get volume info
-    let songVolume = amp.getLevel();
-    
-    //set color variables from vol and freq info
-    let currentColorHue = map(highEnergy, 0, 100, 0, 100);
-    let currentColorSaturation = map(lowEnergy, 0, 255, 50, 100);
-    let currentColorBrightness = map(totalEnergy, 0, 255, 0, 100);
-    let currentColor = [currentColorHue, currentColorSaturation, currentColorBrightness];
-
-    if(song.isPlaying()) {
-        spectrogram.push(new SoundHistoryNode(songVolume, currentColor));
-    }
-    else {
-        spectrogram.push(new SoundHistoryNode(songMaxVolume / 2, [0, 0, 0]));
-    }
-
-    //draw colorful background
-    if(colorfulBackgroundOn) {
-        drawColorfulBackground();
-    }
-
-    //draw spectrogram
-    if(spectrogramOn) {
-        drawSpectrogram(currentColorHue);
-    }
-
-    //remove the oldest soundHistoryNode from spectrogram
-    spectrogram.splice(0, 1);
-
-    //fractal
-    if(fractalOn) {
-        drawFractals(totalEnergy, songVolume, currentColorHue);
-    }
-
-    //frame rate
-    if(frameRateOn) {
-        printAvgFrameRate();
-    }
+  beatbox.draw();
 }
 
-function printMessage(message) {
-    background(0, 0, 0);
-    stroke(0, 0, 100);
-    fill(0, 0, 100);
-    textSize(60);
-    textAlign(CENTER, CENTER);
-    text(message, width / 2, height / 2);
-}
-
-function drawColorfulBackground() {
-    for(let i = 0; i < spectrogram.length; i++) {
-        stroke(spectrogram[i].col);
-        line(i, 0, i, height);
-    }
-}
-
-function drawSpectrogram(currentColorHue) {
-    noFill();
-    beginShape();
-    for(let i = 0; i < spectrogram.length; i++) {
-        let y = map(spectrogram[i].volume, 0, songMaxVolume, height * 0.6, height * 0.4);
-
-        let oppositeHue = currentColorHue + 50;
-        if(oppositeHue > 99) {
-            oppositeHue %= 100;
-        }
-        stroke(oppositeHue, 100, 100)
-        vertex(i, y);
-    }
-    endShape();
-}
-
-function drawFractals(totalEnergy, songVolume, currentColorHue) {
-    //TODO: find a way to normalize totalEnergy
-    let fractalResolution = map(totalEnergy, 0, 100, 16, 10); //more energy => finer resolution
-    let colorResolution = map(totalEnergy, 0, 255, 0, 50);
-
-    //average the current fractal angle with previous angles for a smoother transition
-    let currentFractalAngle = map(songVolume, 0, currentVolume / htmlHelper.volumeSliderMax, 0, PI);
-    fractalAngleHistory.push(currentFractalAngle);
-    let fractalAngleAvg = 0;
-    for(let i = 0; i < fractalAngleHistory.length; i++) {
-        fractalAngleAvg += fractalAngleHistory[i];
-    }
-    fractalAngleAvg /= fractalAngleHistory.length;
-    fractalAngleHistory.splice(0, 1);
-
-    //draw the fractals
-    //TODO: draw both fractals at once for better performance
-    stroke(currentColorHue, 100, 100);
-    
-    //bottom fractal
-    push();
-    translate(width / 2, height);
-    drawBranch(width / heightDivider, fractalAngleAvg, fractalResolution, currentColorHue, colorResolution);
-    pop();
-
-    //top fractal
-    push();
-    translate(width / 2, 0);
-    scale(1, -1);
-    drawBranch(width / heightDivider, fractalAngleAvg, fractalResolution, currentColorHue, colorResolution);
-    pop();
-}
-
-//drawBranch() is a Recursive function used to draw fractals
-//  len: branch length
-//  fractalAngle: angle between child branches
-//  fractalResolution: branch length pixel count used to break out of the recursion
-//  branchColor: the branches color
-//  colorResolution: the offset around the color wheel that the child branch will have relative to its parent
-function drawBranch(len, fractalAngle, fractalResolution, branchColor, colorResolution) {
-    if(!song.isPlaying()) {
-        return;
-    }
-
-    //draw the branch
-    stroke(branchColor, 100, 100);
-    line(0, 0, 0, -len);
-
-    //Below code can adjust the look of the fractals. Needs more work to optimize performance
-
-    // let numLines = 3;
-    // for(let i = 0; i < numLines; i++) {
-    //     if(i == 0) {
-    //         line(0, 0, 0, -len);
-    //         continue;
-    //     }
-    //     push();
-    //     rotate(TWO_PI / i);
-    //     line(0, 0, 0, -len);
-    //     pop();
-
-    //     push();
-    //     rotate(-(TWO_PI / i));
-    //     line(0, 0, 0, -len);
-    //     pop();
-    // }
-  
-    //Offset the child branch a certain amount around the color wheel
-    branchColor += colorResolution;
-    if(branchColor > 99) {
-      branchColor %= 100;
-    }
-  
-    //if the current branch length isn't too small, continue recursing
-    if(len > fractalResolution) {
-      translate(0, -len);
-
-      //right branch
-      push();
-      rotate(fractalAngle);
-      drawBranch(len * 0.67, fractalAngle, fractalResolution, branchColor, colorResolution);
-      pop();
-
-      //left branch
-      push();
-      rotate(-fractalAngle);
-      drawBranch(len * 0.67, fractalAngle, fractalResolution, branchColor, colorResolution);
-      pop();
-    }
-}
-
-function printAvgFrameRate() {
-    fpsHistory.push(frameRate());
-    let avgFr = 0;
-    for(let i = 0; i < fpsHistory.length; i++) {
-        avgFr += fpsHistory[i];
-    }
-    avgFr /= fpsHistory.length;
-    textAlign(LEFT);
-    fill(100, 0, 100);
-    stroke(0, 100, 0);
-    textSize(12);
-    text("FPS: " + avgFr.toFixed(2), 10, height - 10);
-    fpsHistory.splice(0, 1);
+function keyPressed() {
+  beatbox.interactivity.keyPressed();
 }
