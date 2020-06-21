@@ -1,6 +1,9 @@
 var beatbox = {
   setup: function () {
-    beatbox.canvas.p5Canvas = createCanvas(beatbox.canvas.width, beatbox.canvas.height);
+    beatbox.canvas.p5Canvas = createCanvas(
+      beatbox.canvas.width,
+      beatbox.canvas.height
+    );
     beatbox.canvas.p5Canvas.mousePressed(beatbox.song.togglePlayback);
     beatbox.htmlHelper.init();
     beatbox.song.p5Song = loadSound(
@@ -39,11 +42,12 @@ var beatbox = {
         beatbox.sound.currentVolume = beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value();
         beatbox.song.p5Song.setVolume(
           beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() /
-          beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
+            beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
         );
       } else if (
         beatbox.song.isMuted &&
-        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() != 0
+        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() !=
+          0
       ) {
         beatbox.song.toggleMute();
       }
@@ -62,8 +66,20 @@ var beatbox = {
 
     //set color variables from vol and freq info
     beatbox.canvas.colorHue = map(beatbox.canvas.highEnergy, 0, 100, 0, 100);
-    beatbox.canvas.colorSaturation = map(beatbox.canvas.lowEnergy, 0, 255, 50, 100);
-    beatbox.canvas.colorBrightness = map(beatbox.canvas.totalEnergy, 0, 255, 0, 100);
+    beatbox.canvas.colorSaturation = map(
+      beatbox.canvas.lowEnergy,
+      0,
+      255,
+      50,
+      100
+    );
+    beatbox.canvas.colorBrightness = map(
+      beatbox.canvas.totalEnergy,
+      0,
+      255,
+      0,
+      100
+    );
     let currentColor = [
       beatbox.canvas.colorHue,
       beatbox.canvas.colorSaturation,
@@ -72,8 +88,8 @@ var beatbox = {
 
     if (beatbox.song.p5Song.isPlaying()) {
       beatbox.canvas.spectrogram.nodes.push({
-          volume: songVolume,
-          color: currentColor,
+        volume: songVolume,
+        color: currentColor,
       });
     } else {
       beatbox.canvas.spectrogram.nodes.push({
@@ -88,19 +104,15 @@ var beatbox = {
       );
     }
     if (beatbox.canvas.spectrogram.enabled) {
-      beatbox.canvas.spectrogram.draw(beatbox.sound.maxVolume, beatbox.canvas.colorHue);
+      beatbox.canvas.spectrogram.draw(
+        beatbox.sound.maxVolume,
+        beatbox.canvas.colorHue
+      );
     }
     //remove the oldest soundHistoryNode from spectrogram
     beatbox.canvas.spectrogram.nodes.splice(0, 1);
     if (beatbox.canvas.fractal.enabled) {
-      beatbox.canvas.fractal.draw(
-        beatbox.canvas.totalEnergy,
-        beatbox.sound.currentVolume,
-        beatbox.canvas.colorHue,
-        beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue,
-        beatbox.canvas.width,
-        beatbox.canvas.height
-      );
+      beatbox.canvas.fractal.draw();
     }
     if (beatbox.canvas.frameRateDisplay.enabled) {
       beatbox.canvas.frameRateDisplay.draw(beatbox.canvas.height);
@@ -180,17 +192,25 @@ var beatbox = {
       beatbox.htmlHelper.interactivityDiv = createDiv();
       beatbox.htmlHelper.buttonList.buttonListDiv = createDiv();
       beatbox.htmlHelper.sliderList.sliderListDiv = createDiv();
-      beatbox.htmlHelper.buttonList.buttons.frameRateButton = createButton("FR");
+      beatbox.htmlHelper.buttonList.buttons.frameRateButton = createButton(
+        "FR"
+      );
       beatbox.htmlHelper.canvasDiv.class("mediaPlayer"); //set the html class
       beatbox.htmlHelper.canvasDiv.child(beatbox.canvas.p5Canvas);
       beatbox.htmlHelper.interactivityDiv.class("interactivity");
-      beatbox.htmlHelper.interactivityDiv.child(beatbox.htmlHelper.buttonList.buttonListDiv);
-      beatbox.htmlHelper.interactivityDiv.child(beatbox.htmlHelper.sliderList.sliderListDiv);
+      beatbox.htmlHelper.interactivityDiv.child(
+        beatbox.htmlHelper.buttonList.buttonListDiv
+      );
+      beatbox.htmlHelper.interactivityDiv.child(
+        beatbox.htmlHelper.sliderList.sliderListDiv
+      );
       beatbox.htmlHelper.buttonList.buttonListDiv.class("buttonList");
       beatbox.htmlHelper.buttonList.buttonListDiv.child(
         beatbox.htmlHelper.buttonList.buttons.frameRateButton
       );
-      beatbox.htmlHelper.buttonList.buttons.frameRateButton.mousePressed(beatbox.canvas.frameRateDisplay.toggle);
+      beatbox.htmlHelper.buttonList.buttons.frameRateButton.mousePressed(
+        beatbox.canvas.frameRateDisplay.toggle
+      );
       beatbox.htmlHelper.sliderList.sliderListDiv.class("sliderList");
     },
   },
@@ -228,9 +248,9 @@ var beatbox = {
     loaded: function () {
       beatbox.song.isLoaded = true;
       beatbox.song.isLoading = false;
-      beatbox.song.duration = beatbox.song.p5Song.duration()
+      beatbox.song.duration = beatbox.song.p5Song.duration();
       beatbox.initSongElements();
-      beatbox.canvas.setVisualElementsVisible(true)
+      beatbox.canvas.setVisualElementsVisible(true);
     },
     loadFailed: function () {
       beatbox.song.isLoadSuccess = false;
@@ -263,15 +283,22 @@ var beatbox = {
     },
     toggleMute: function () {
       if (beatbox.song.isMuted) {
-        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value(beatbox.sound.currentVolume);
-        beatbox.song.p5Song.setVolume(beatbox.sound.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue);
+        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value(
+          beatbox.sound.currentVolume
+        );
+        beatbox.song.p5Song.setVolume(
+          beatbox.sound.currentVolume /
+            beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
+        );
         beatbox.htmlHelper.buttonList.buttons.muteButton.html("Mute");
       } else {
-        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value(0);
+        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value(
+          0
+        );
         beatbox.song.p5Song.setVolume(0);
         beatbox.htmlHelper.buttonList.buttons.muteButton.html("Unmute");
       }
-      beatbox.song.isMuted = !(beatbox.song.isMuted);
+      beatbox.song.isMuted = !beatbox.song.isMuted;
     },
   },
   canvas: {
@@ -328,22 +355,28 @@ var beatbox = {
       rotateOffset: 0,
       resolution: 0,
       colorResolution: 0,
-      draw: function (
-        totalEnergy,
-        currentVolume,
-        colorHue,
-        volumeSliderMax,
-        canvasWidth,
-        canvasHeight
-      ) {
+      draw: function () {
         //TODO: find a way to normalize totalEnergy
-        beatbox.canvas.fractal.resolution = map(totalEnergy, 0, 100, 16, 10); //more energy => finer resolution
-        beatbox.canvas.fractal.colorResolution = map(totalEnergy, 0, 255, 0, 50);
+        beatbox.canvas.fractal.resolution = map(
+          beatbox.canvas.totalEnergy,
+          0,
+          100,
+          16,
+          10
+        ); //more energy => finer resolution
+        beatbox.canvas.fractal.colorResolution = map(
+          beatbox.canvas.totalEnergy,
+          0,
+          255,
+          0,
+          50
+        );
         //average the current fractal angle with previous angles for a smoother transition
         let currentFractalAngle = map(
-          currentVolume,
+          beatbox.sound.currentVolume,
           0,
-          currentVolume / volumeSliderMax,
+          beatbox.sound.currentVolume /
+            beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue,
           0,
           PI
         );
@@ -356,20 +389,24 @@ var beatbox = {
         beatbox.canvas.fractal.angleHistory.splice(0, 1);
         //draw the fractals
         //TODO: draw both fractals at once for better performance
-        stroke(colorHue, 100, 100);
+        stroke(beatbox.canvas.colorHue, 100, 100);
         //bottom fractal
         push();
-        translate(canvasWidth / 2, canvasHeight);
-        beatbox.canvas.fractal.drawBranch(width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, colorHue);
+        translate(beatbox.canvas.width / 2, beatbox.canvas.height);
+        beatbox.canvas.fractal.drawBranch(
+          beatbox.canvas.width / beatbox.canvas.fractal.heightDivider,
+          fractalAngleAvg,
+          beatbox.canvas.colorHue
+        );
         pop();
         //top fractal
         push();
         translate(width / 2, 0);
         scale(1, -1);
         beatbox.canvas.fractal.drawBranch(
-          canvasWidth / beatbox.canvas.fractal.heightDivider,
+          beatbox.canvas.width / beatbox.canvas.fractal.heightDivider,
           fractalAngleAvg,
-          colorHue
+          beatbox.canvas.colorHue
         );
         pop();
       },
@@ -394,12 +431,20 @@ var beatbox = {
           //right branch
           push();
           rotate(fractalAngle);
-          beatbox.canvas.fractal.drawBranch(len * 0.67, fractalAngle, branchColor);
+          beatbox.canvas.fractal.drawBranch(
+            len * 0.67,
+            fractalAngle,
+            branchColor
+          );
           pop();
           //left branch
           push();
           rotate(-fractalAngle);
-          beatbox.canvas.fractal.drawBranch(len * 0.67, fractalAngle, branchColor);
+          beatbox.canvas.fractal.drawBranch(
+            len * 0.67,
+            fractalAngle,
+            branchColor
+          );
           pop();
         }
       },
@@ -408,12 +453,17 @@ var beatbox = {
       enabled: true,
       history: new Array(20).fill(1),
       toggle: function () {
-        beatbox.canvas.frameRateDisplay.enabled = !(beatbox.canvas.frameRateDisplay.enabled);
+        beatbox.canvas.frameRateDisplay.enabled = !beatbox.canvas
+          .frameRateDisplay.enabled;
       },
       draw: function (canvasHeight) {
         beatbox.canvas.frameRateDisplay.history.push(frameRate());
         let avgFr = 0;
-        for (let i = 0; i < beatbox.canvas.frameRateDisplay.history.length; i++) {
+        for (
+          let i = 0;
+          i < beatbox.canvas.frameRateDisplay.history.length;
+          i++
+        ) {
           avgFr += beatbox.canvas.frameRateDisplay.history[i];
         }
         avgFr /= beatbox.canvas.frameRateDisplay.history.length;
@@ -456,7 +506,9 @@ var beatbox = {
       let jumpToTime = 0;
       switch (keyCode) {
         case LEFT_ARROW:
-          jumpToTime = beatbox.song.p5Song.currentTime() - beatbox.interactivity.timeSkipLength;
+          jumpToTime =
+            beatbox.song.p5Song.currentTime() -
+            beatbox.interactivity.timeSkipLength;
           if (jumpToTime > 0) {
             beatbox.interactivity.preJump();
             beatbox.song.p5Song.jump(jumpToTime);
@@ -467,7 +519,9 @@ var beatbox = {
           beatbox.interactivity.konami.checkKonamiCode("LEFT");
           break;
         case RIGHT_ARROW:
-          jumpToTime = beatbox.song.p5Song.currentTime() + beatbox.interactivity.timeSkipLength;
+          jumpToTime =
+            beatbox.song.p5Song.currentTime() +
+            beatbox.interactivity.timeSkipLength;
           if (jumpToTime < beatbox.song.duration) {
             beatbox.interactivity.preJump();
             beatbox.song.p5Song.jump(jumpToTime);
@@ -527,13 +581,13 @@ var beatbox = {
 
 //setup() called just before draw()
 function setup() {
-  beatbox.setup()
+  beatbox.setup();
 }
 //draw() is called repeatedly. It defaults at 60fps but adjusts automatically based on CPU load
 function draw() {
-  beatbox.draw()
+  beatbox.draw();
 }
 
 function keyPressed() {
-  beatbox.interactivity.keyPressed()
+  beatbox.interactivity.keyPressed();
 }
