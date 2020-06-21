@@ -373,7 +373,7 @@ var beatbox = {
         );
         //average the current fractal angle with previous angles for a smoother transition
         let currentFractalAngle = map(
-          beatbox.sound.currentVolume,
+          beatbox.sound.amp.getLevel(),
           0,
           beatbox.sound.currentVolume /
             beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue,
