@@ -1,25 +1,8 @@
 var beatbox = {
   setup: function () {
-    beatbox.canvas.p5Canvas = createCanvas(
-      beatbox.canvas.width,
-      beatbox.canvas.height
-    )
-    beatbox.canvas.p5Canvas.mousePressed(beatbox.song.togglePlayback)
-    beatbox.htmlHelper.init()
-    beatbox.song.p5Song = loadSound(
-      "sounds/Sunrise.mp3",
-      beatbox.song.loaded,
-      beatbox.canvas.setVisualElementsVisible(false),
-      beatbox.canvas.setVisualElementsVisible(false)
-    )
-    colorMode(HSB, 100)
-    beatbox.canvas.spectrogram.nodes = new Array(beatbox.canvas.width).fill({
-      volume: beatbox.sound.maxVolume / 2,
-      color: [0, 0, 0],
-    })
-    beatbox.canvas.fractal.angleHistory = new Array(
-      beatbox.canvas.fractal.angleHistoryCount
-    ).fill(0)
+    beatbox.canvas.setup()
+    beatbox.htmlHelper.setup()
+    beatbox.song.setup()
   },
   draw: function () {
     if (beatbox.canvas.background.redraw) {
@@ -187,7 +170,7 @@ var beatbox = {
         },
       },
     },
-    init: function () {
+    setup: function () {
       beatbox.htmlHelper.canvasDiv = createDiv()
       beatbox.htmlHelper.interactivityDiv = createDiv()
       beatbox.htmlHelper.buttonList.buttonListDiv = createDiv()
@@ -242,6 +225,12 @@ var beatbox = {
     position: 0,
     positionAutoUpdate: true,
     skipRate: 10, //number of seconds to skip forward or back,
+    setup: function () {
+      beatbox.song.p5Song = loadSound(
+        "sounds/Sunrise.mp3",
+        beatbox.song.loaded
+      )
+    },
     load: function () {
       beatbox.song.isLoading = true
     },
@@ -474,6 +463,21 @@ var beatbox = {
         text("FPS: " + avgFr.toFixed(2), 10, canvasHeight - 10)
         beatbox.canvas.frameRateDisplay.history.splice(0, 1)
       },
+    },
+    setup: function () {
+      beatbox.canvas.p5Canvas = createCanvas(
+        beatbox.canvas.width,
+        beatbox.canvas.height
+      )
+      beatbox.canvas.p5Canvas.mousePressed(beatbox.song.togglePlayback)
+      colorMode(HSB, 100)
+      beatbox.canvas.spectrogram.nodes = new Array(beatbox.canvas.width).fill({
+        volume: beatbox.sound.maxVolume / 2,
+        color: [0, 0, 0],
+      })
+      beatbox.canvas.fractal.angleHistory = new Array(
+        beatbox.canvas.fractal.angleHistoryCount
+      ).fill(0)
     },
     printMessage: function (message) {
       background(0, 0, 0)
