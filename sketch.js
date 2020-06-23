@@ -122,8 +122,8 @@ var beatbox = {
       else {
         beatbox.html.buttonList.buttons.songButton.html("Pause")
         beatbox.song.p5Song.play()
-        if (beatbox.song.isMuted) { beatbox.song.p5Song.setVolume(0) }
-        else { beatbox.song.p5Song.setVolume(beatbox.song.currentVolume / beatbox.html.sliderList.sliders.volumeSlider.maxValue) }
+        let volume = beatbox.song.isMuted ? 0 : beatbox.song.currentVolume / beatbox.html.sliderList.sliders.volumeSlider.maxValue
+        beatbox.song.p5Song.setVolume(volume)
         beatbox.song.p5Song.onended(beatbox.song.onSongEnd)
       }
     },
