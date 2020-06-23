@@ -1,5 +1,6 @@
 var beatbox = {
   setup: function () {
+    p5.disableFriendlyErrors = true
     beatbox.canvas.setup()
     beatbox.song.setup()
     beatbox.html.setup()
@@ -104,7 +105,6 @@ var beatbox = {
       beatbox.song.duration = beatbox.song.p5Song.duration()
       beatbox.song.loadCurrentVolume()
       beatbox.html.onSongLoaded()
-      beatbox.canvas.setVisualElementsVisible(true)
     },
     onSongLoadFail: function () {
       beatbox.song.isLoading = false
@@ -147,8 +147,8 @@ var beatbox = {
     },
   },
   canvas: {
-    height: 660,
-    width: 660,
+    width: 1200,
+    height: 800,
     p5Canvas: {},
     lowEnergy: {},
     highEnergy: {},
@@ -157,13 +157,14 @@ var beatbox = {
     colorSaturation: {},
     colorBrightness: {},
     background: {
+      enabled: false,
       redraw: true, // When false, previous frames aren't overwritten. Set to true for 'colorful' bg.
       reset: function () { background(0, 0, 0) },
       draw: function () {
         if (beatbox.canvas.background.redraw) {
           beatbox.canvas.background.reset()
           for (let i = 0; i < beatbox.canvas.spectrogram.nodes.length; i++) {
-            stroke(beatbox.canvas.spectrogram.nodes[i].color)
+            stroke(beatbox.canvas.background.enabled ? beatbox.canvas.spectrogram.nodes[i].color : [0, 0, 0])
             line(i, 0, i, beatbox.canvas.height)
           }
         }
@@ -200,8 +201,10 @@ var beatbox = {
     fractal: {
       enabled: true,
       angleHistory: [],
-      angleHistoryCount: 3, // Determines the smoothness of the fractal movement
-      heightDivider: 8, // Determines starting heights of fractals relative to window height
+      angleHistoryCount: 100, // Determines the smoothness of the fractal movement
+      angleMultiplier: 10,
+      trunkSkip: 1, // Determines the number of branches to exclude from the beginning of the fractal
+      heightDivider: 7, // Determines starting heights of fractals relative to window height
       rotateOffset: 0,
       resolution: 0,
       colorResolution: 0,
@@ -227,36 +230,37 @@ var beatbox = {
           // Draw bottom fractal
           push()
           translate(beatbox.canvas.width / 2, beatbox.canvas.height)
-          beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue)
+          beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue, 0, 5)
           pop()
 
           // Draw top fractal
           push()
           translate(width / 2, 0)
           scale(1, -1)
-          beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue)
+          beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue, 0, 5)
           pop()
         }
       },
-      drawBranch: function (len, fractalAngle, branchColor) {
+      drawBranch: function (len, fractalAngle, branchColor, index, thickness) {
         stroke(branchColor, 100, 100)
-        line(0, 0, 0, -len)
+        strokeWeight(thickness === 1 ? thickness : thickness--)
+        if (index++ >= beatbox.canvas.fractal.trunkSkip) { line(0, 0, 0, -len) }
         // Offset the child branch a certain amount around the color wheel
         branchColor += beatbox.canvas.fractal.colorResolution
         if (branchColor > 99) { branchColor %= 100 }
-        if (len > beatbox.canvas.fractal.resolution) {
+        if (len > 25) {
           translate(0, -len)
 
           // Draw right branch
           push()
           rotate(fractalAngle)
-          beatbox.canvas.fractal.drawBranch(len * 0.67, fractalAngle, branchColor)
+          beatbox.canvas.fractal.drawBranch(len * 0.67, fractalAngle * beatbox.canvas.fractal.angleMultiplier, branchColor, index, thickness)
           pop()
 
           // Draw left branch
           push()
           rotate(-fractalAngle)
-          beatbox.canvas.fractal.drawBranch(len * 0.67, fractalAngle, branchColor)
+          beatbox.canvas.fractal.drawBranch(len * 0.67, fractalAngle * beatbox.canvas.fractal.angleMultiplier, branchColor, index, thickness)
           pop()
         }
       },
@@ -281,6 +285,8 @@ var beatbox = {
     },
     setup: function () {
       colorMode(HSB, 100)
+      beatbox.canvas.width = windowWidth - 100
+      beatbox.canvas.height = windowHeight - 100
       beatbox.canvas.p5Canvas = createCanvas(beatbox.canvas.width, beatbox.canvas.height)
       beatbox.canvas.p5Canvas.mousePressed(beatbox.song.togglePlayback)
       beatbox.canvas.spectrogram.setup()
