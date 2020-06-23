@@ -20,8 +20,6 @@ var beatbox = {
       }
       else if (beatbox.song.isMuted && beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() != 0) { beatbox.song.toggleMute() }
     }
-    else if (beatbox.song.isLoading) { printMessage("Loading...") }
-    else if (!beatbox.song.isLoadSuccess) { printMessage("Song failed to load") }
 
     beatbox.sound.fft.analyze()
     let songVolume = beatbox.sound.amp.getLevel()
@@ -55,25 +53,6 @@ var beatbox = {
     //remove the oldest soundHistoryNode from spectrogram
     beatbox.canvas.spectrogram.nodes.splice(0, 1)
   },
-  initSongElements: function () {
-    beatbox.htmlHelper.buttonList.buttons.songButton = createButton("Play")
-    beatbox.htmlHelper.buttonList.buttons.songButton.mousePressed(beatbox.song.togglePlayback)
-    beatbox.htmlHelper.buttonList.buttonListDiv.child(beatbox.htmlHelper.buttonList.buttons.songButton)
-
-    beatbox.htmlHelper.buttonList.buttons.muteButton = createButton("Mute")
-    beatbox.htmlHelper.buttonList.buttons.muteButton.mousePressed(beatbox.song.toggleMute)
-    beatbox.htmlHelper.buttonList.buttonListDiv.child(beatbox.htmlHelper.buttonList.buttons.muteButton)
-
-    beatbox.htmlHelper.sliderList.sliders.songPositionSlider = createSlider(0, beatbox.song.p5Song.duration(), 0, 1)
-    beatbox.htmlHelper.sliderList.sliders.songPositionSlider.style("width", beatbox.canvas.width + "px")
-    beatbox.htmlHelper.sliderList.sliderListDiv.child(beatbox.htmlHelper.sliderList.sliders.songPositionSlider)
-
-    beatbox.sound.loadCurrentVolume()
-    beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject = createSlider(0, beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue, beatbox.sound.currentVolume, 1)
-    beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.style("width", beatbox.canvas.width + "px")
-    beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.mouseReleased(beatbox.sound.saveCurrentVolume)
-    beatbox.htmlHelper.sliderList.sliderListDiv.child(beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject)
-  },
   htmlHelper: {
     canvasDiv: {},
     interactivityDiv: {}, //div to hold buttons, sliders, etc.
@@ -97,20 +76,41 @@ var beatbox = {
     },
     setup: function () {
       beatbox.htmlHelper.canvasDiv = createDiv()
-      beatbox.htmlHelper.interactivityDiv = createDiv()
-      beatbox.htmlHelper.buttonList.buttonListDiv = createDiv()
-      beatbox.htmlHelper.sliderList.sliderListDiv = createDiv()
-      beatbox.htmlHelper.buttonList.buttons.frameRateButton = createButton("FR")
       beatbox.htmlHelper.canvasDiv.class("mediaPlayer") //set the html class
       beatbox.htmlHelper.canvasDiv.child(beatbox.canvas.p5Canvas)
+
+      beatbox.htmlHelper.buttonList.buttonListDiv = createDiv()
+      beatbox.htmlHelper.buttonList.buttonListDiv.class("buttonList")
+      beatbox.htmlHelper.buttonList.buttons.frameRateButton = createButton("FR")
+      beatbox.htmlHelper.buttonList.buttons.frameRateButton.mousePressed(beatbox.canvas.frameRateDisplay.toggle)
+      beatbox.htmlHelper.buttonList.buttonListDiv.child(beatbox.htmlHelper.buttonList.buttons.frameRateButton)
+
+      beatbox.htmlHelper.sliderList.sliderListDiv = createDiv()
+      beatbox.htmlHelper.sliderList.sliderListDiv.class("sliderList")
+
+      beatbox.htmlHelper.interactivityDiv = createDiv()
       beatbox.htmlHelper.interactivityDiv.class("interactivity")
       beatbox.htmlHelper.interactivityDiv.child(beatbox.htmlHelper.buttonList.buttonListDiv)
       beatbox.htmlHelper.interactivityDiv.child(beatbox.htmlHelper.sliderList.sliderListDiv)
-      beatbox.htmlHelper.buttonList.buttonListDiv.class("buttonList")
-      beatbox.htmlHelper.buttonList.buttonListDiv.child(beatbox.htmlHelper.buttonList.buttons.frameRateButton)
-      beatbox.htmlHelper.buttonList.buttons.frameRateButton.mousePressed(beatbox.canvas.frameRateDisplay.toggle)
-      beatbox.htmlHelper.sliderList.sliderListDiv.class("sliderList")
     },
+    onSongLoaded: function () {
+      beatbox.htmlHelper.buttonList.buttons.songButton = createButton("Play")
+      beatbox.htmlHelper.buttonList.buttons.songButton.mousePressed(beatbox.song.togglePlayback)
+      beatbox.htmlHelper.buttonList.buttonListDiv.child(beatbox.htmlHelper.buttonList.buttons.songButton)
+
+      beatbox.htmlHelper.buttonList.buttons.muteButton = createButton("Mute")
+      beatbox.htmlHelper.buttonList.buttons.muteButton.mousePressed(beatbox.song.toggleMute)
+      beatbox.htmlHelper.buttonList.buttonListDiv.child(beatbox.htmlHelper.buttonList.buttons.muteButton)
+
+      beatbox.htmlHelper.sliderList.sliders.songPositionSlider = createSlider(0, beatbox.song.p5Song.duration(), 0, 1)
+      beatbox.htmlHelper.sliderList.sliders.songPositionSlider.style("width", beatbox.canvas.width + "px")
+      beatbox.htmlHelper.sliderList.sliderListDiv.child(beatbox.htmlHelper.sliderList.sliders.songPositionSlider)
+
+      beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject = createSlider(0, beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue, beatbox.sound.currentVolume, 1)
+      beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.style("width", beatbox.canvas.width + "px")
+      beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.mouseReleased(beatbox.sound.saveCurrentVolume)
+      beatbox.htmlHelper.sliderList.sliderListDiv.child(beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject)
+    }
   },
   sound: {
     amp: new p5.Amplitude(),
@@ -126,29 +126,29 @@ var beatbox = {
   song: {
     p5Song: {},
     isLoaded: false,
-    isLoadSuccess: true,
     isLoading: false,
     isMuted: false,
     duration: 0,
     position: 0,
     positionAutoUpdate: true,
     skipRate: 10, //number of seconds to skip forward or back,
-    setup: function () { beatbox.song.p5Song = loadSound("sounds/Sunrise.mp3", beatbox.song.loaded) },
-    load: function () { beatbox.song.isLoading = true },
-    loaded: function () {
+    setup: function () { beatbox.song.p5Song = loadSound("sounds/Sunrise.mp3", beatbox.song.onSongLoaded, beatbox.song.onSongLoadFail, beatbox.song.onSongLoading) },
+    onSongLoaded: function () {
       beatbox.song.isLoaded = true
       beatbox.song.isLoading = false
       beatbox.song.duration = beatbox.song.p5Song.duration()
-      beatbox.initSongElements()
+      beatbox.sound.loadCurrentVolume()
+      beatbox.htmlHelper.onSongLoaded()
       beatbox.canvas.setVisualElementsVisible(true)
     },
-    loadFailed: function () {
-      beatbox.song.isLoadSuccess = false
+    onSongLoadFail: function () {
       beatbox.song.isLoading = false
+      printMessage("Song failed to load")
     },
-    ended: function () { beatbox.htmlHelper.buttonList.buttons.songButton.html("Play") },
+    onSongLoading: function () { beatbox.song.isLoading = true },
+    onSongEnd: function () { beatbox.htmlHelper.buttonList.buttons.songButton.html("Play") },
     togglePlayback: function () {
-      if (beatbox.song.isLoading || !beatbox.song.isLoadSuccess) { return }
+      if (beatbox.song.isLoading) { return }
       if (beatbox.song.p5Song.isPlaying()) {
         beatbox.htmlHelper.buttonList.buttons.songButton.html("Play")
         beatbox.song.position = beatbox.song.p5Song.currentTime()
@@ -159,7 +159,7 @@ var beatbox = {
         beatbox.song.p5Song.play()
         if (beatbox.song.isMuted) { beatbox.song.p5Song.setVolume(0) }
         else { beatbox.song.p5Song.setVolume(beatbox.sound.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue) }
-        beatbox.song.p5Song.onended(beatbox.song.ended)
+        beatbox.song.p5Song.onended(beatbox.song.onSongEnd)
       }
     },
     toggleMute: function () {
