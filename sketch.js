@@ -5,52 +5,9 @@ var beatbox = {
     beatbox.song.setup()
   },
   draw: function () {
-    if (beatbox.canvas.background.redraw) { beatbox.canvas.background.reset() }
-    if (beatbox.song.isLoaded) {
-      if (beatbox.song.positionAutoUpdate) {
-        if (beatbox.song.p5Song.isPlaying()) { beatbox.htmlHelper.sliderList.sliders.songPositionSlider.value(beatbox.song.p5Song.currentTime()) }
-        else { beatbox.htmlHelper.sliderList.sliders.songPositionSlider.value(beatbox.song.position) }
-      }
-      if (beatbox.song.p5Song.isPlaying() && !beatbox.song.isMuted) {
-        beatbox.song.currentVolume = beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value()
-        beatbox.song.p5Song.setVolume(
-          beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() /
-          beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
-        )
-      }
-      else if (beatbox.song.isMuted && beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() != 0) { beatbox.song.toggleMute() }
-    }
-
     beatbox.song.fft.analyze()
-    let songVolume = beatbox.song.amp.getLevel()
-    beatbox.canvas.lowEnergy = beatbox.song.fft.getEnergy(40, 180)
-    beatbox.canvas.highEnergy = beatbox.song.fft.getEnergy(10000, 15000)
-    beatbox.canvas.totalEnergy = beatbox.song.fft.getEnergy(40, 15000)
-
-    // Set color variables from volume and frequency info
-    beatbox.canvas.colorHue = map(beatbox.canvas.highEnergy, 0, 100, 0, 100)
-    beatbox.canvas.colorSaturation = map(beatbox.canvas.lowEnergy, 0, 255, 50, 100)
-    beatbox.canvas.colorBrightness = map(beatbox.canvas.totalEnergy, 0, 255, 0, 100)
-    let currentColor = [beatbox.canvas.colorHue, beatbox.canvas.colorSaturation, beatbox.canvas.colorBrightness]
-
-    if (beatbox.song.p5Song.isPlaying()) {
-      beatbox.canvas.spectrogram.nodes.push({
-        volume: songVolume,
-        color: currentColor,
-      })
-    }
-    else {
-      beatbox.canvas.spectrogram.nodes.push({
-        volume: beatbox.song.maxVolume / 2,
-        color: [0, 0, 0],
-      })
-    }
-
-    if (beatbox.canvas.background.redraw) { beatbox.canvas.background.draw(beatbox.canvas.spectrogram.nodes, beatbox.canvas.height) }
-    if (beatbox.canvas.fractal.enabled) { beatbox.canvas.fractal.draw() }
-    if (beatbox.canvas.frameRateDisplay.enabled) { beatbox.canvas.frameRateDisplay.draw(beatbox.canvas.height) }
-    if (beatbox.canvas.spectrogram.enabled) { beatbox.canvas.spectrogram.draw(beatbox.song.maxVolume, beatbox.canvas.colorHue) }
-    beatbox.canvas.spectrogram.nodes.splice(0, 1) // Remove the oldest soundHistoryNode from spectrogram
+    beatbox.htmlHelper.draw()
+    beatbox.canvas.draw()
   },
   htmlHelper: {
     canvasDiv: {},
@@ -91,6 +48,22 @@ var beatbox = {
       beatbox.htmlHelper.interactivityDiv.class("interactivity")
       beatbox.htmlHelper.interactivityDiv.child(beatbox.htmlHelper.buttonList.buttonListDiv)
       beatbox.htmlHelper.interactivityDiv.child(beatbox.htmlHelper.sliderList.sliderListDiv)
+    },
+    draw: function () {
+      if (beatbox.song.isLoaded) {
+        if (beatbox.song.positionAutoUpdate) {
+          if (beatbox.song.p5Song.isPlaying()) { beatbox.htmlHelper.sliderList.sliders.songPositionSlider.value(beatbox.song.p5Song.currentTime()) }
+          else { beatbox.htmlHelper.sliderList.sliders.songPositionSlider.value(beatbox.song.position) }
+        }
+        if (beatbox.song.p5Song.isPlaying() && !beatbox.song.isMuted) {
+          beatbox.song.currentVolume = beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value()
+          beatbox.song.p5Song.setVolume(
+            beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() /
+            beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
+          )
+        }
+        else if (beatbox.song.isMuted && beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() != 0) { beatbox.song.toggleMute() }
+      }
     },
     onSongLoaded: function () {
       beatbox.htmlHelper.buttonList.buttons.songButton = createButton("Play")
@@ -186,27 +159,36 @@ var beatbox = {
     background: {
       redraw: true, // When false, previous frames aren't overwritten. Set to true for 'colorful' bg.
       reset: function () { background(0, 0, 0) },
-      draw: function (spectrogram, height) {
-        for (let i = 0; i < spectrogram.length; i++) {
-          stroke(spectrogram[i].color)
-          line(i, 0, i, beatbox.canvas.height)
+      draw: function () {
+        if (beatbox.canvas.background.redraw) {
+          beatbox.canvas.background.reset()
+          for (let i = 0; i < beatbox.canvas.spectrogram.nodes.length; i++) {
+            stroke(beatbox.canvas.spectrogram.nodes[i].color)
+            line(i, 0, i, beatbox.canvas.height)
+          }
         }
       },
     },
     spectrogram: {
       enabled: true,
       nodes: [],
-      draw: function (maxVolume, colorHue) {
-        noFill()
-        beginShape()
-        for (let i = 0; i < beatbox.canvas.spectrogram.nodes.length; i++) {
-          let y = map(beatbox.canvas.spectrogram.nodes[i].volume, 0, maxVolume, height * 0.6, height * 0.4)
-          let oppositeHue = colorHue + 50
-          if (oppositeHue > 99) { oppositeHue %= 100 }
-          stroke(oppositeHue, 100, 100)
-          vertex(i, y)
+      draw: function () {
+        let volume = beatbox.song.p5Song.isPlaying() ? beatbox.song.amp.getLevel() : beatbox.song.maxVolume / 2
+        let color = beatbox.song.p5Song.isPlaying() ? [beatbox.canvas.colorHue, beatbox.canvas.colorSaturation, beatbox.canvas.colorBrightness] : [0, 0, 0]
+        beatbox.canvas.spectrogram.nodes.push({ volume: volume, color: color })
+        if (beatbox.canvas.spectrogram.enabled) {
+          noFill()
+          beginShape()
+          for (let i = 0; i < beatbox.canvas.spectrogram.nodes.length; i++) {
+            let y = map(beatbox.canvas.spectrogram.nodes[i].volume, 0, beatbox.song.maxVolume, beatbox.canvas.height * 0.6, beatbox.canvas.height * 0.4)
+            let oppositeHue = beatbox.canvas.colorHue + 50
+            if (oppositeHue > 99) { oppositeHue %= 100 }
+            stroke(oppositeHue, 100, 100)
+            vertex(i, y)
+          }
+          endShape()
         }
-        endShape()
+        beatbox.canvas.spectrogram.nodes.splice(0, 1) // Remove the oldest soundHistoryNode from spectrogram
       },
     },
     fractal: {
@@ -218,32 +200,34 @@ var beatbox = {
       resolution: 0,
       colorResolution: 0,
       draw: function () {
-        // TODO: find a way to normalize totalEnergy
-        beatbox.canvas.fractal.resolution = map(beatbox.canvas.totalEnergy, 0, 100, 16, 10) // More energy => Finer resolution
-        beatbox.canvas.fractal.colorResolution = map(beatbox.canvas.totalEnergy, 0, 255, 0, 50)
-        // Average the current fractal angle with previous angles for a smoother transition
-        let currentFractalAngle = map(beatbox.song.amp.getLevel(), 0, beatbox.song.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue, 0, PI)
-        beatbox.canvas.fractal.angleHistory.push(currentFractalAngle)
-        let fractalAngleAvg = 0
-        for (let i = 0; i < beatbox.canvas.fractal.angleHistory.length; i++) { fractalAngleAvg += beatbox.canvas.fractal.angleHistory[i] }
-        fractalAngleAvg /= beatbox.canvas.fractal.angleHistory.length
-        beatbox.canvas.fractal.angleHistory.splice(0, 1)
+        if (beatbox.canvas.fractal.enabled) {
+          // TODO: find a way to normalize totalEnergy
+          beatbox.canvas.fractal.resolution = map(beatbox.canvas.totalEnergy, 0, 100, 16, 10) // More energy => Finer resolution
+          beatbox.canvas.fractal.colorResolution = map(beatbox.canvas.totalEnergy, 0, 255, 0, 50)
+          // Average the current fractal angle with previous angles for a smoother transition
+          let currentFractalAngle = map(beatbox.song.amp.getLevel(), 0, beatbox.song.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue, 0, PI)
+          beatbox.canvas.fractal.angleHistory.push(currentFractalAngle)
+          let fractalAngleAvg = 0
+          for (let i = 0; i < beatbox.canvas.fractal.angleHistory.length; i++) { fractalAngleAvg += beatbox.canvas.fractal.angleHistory[i] }
+          fractalAngleAvg /= beatbox.canvas.fractal.angleHistory.length
+          beatbox.canvas.fractal.angleHistory.splice(0, 1)
 
-        // TODO: draw both fractals at once for better performance
-        stroke(beatbox.canvas.colorHue, 100, 100)
+          // TODO: draw both fractals at once for better performance
+          stroke(beatbox.canvas.colorHue, 100, 100)
 
-        // Draw bottom fractal
-        push()
-        translate(beatbox.canvas.width / 2, beatbox.canvas.height)
-        beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue)
-        pop()
+          // Draw bottom fractal
+          push()
+          translate(beatbox.canvas.width / 2, beatbox.canvas.height)
+          beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue)
+          pop()
 
-        // Draw top fractal
-        push()
-        translate(width / 2, 0)
-        scale(1, -1)
-        beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue)
-        pop()
+          // Draw top fractal
+          push()
+          translate(width / 2, 0)
+          scale(1, -1)
+          beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue)
+          pop()
+        }
       },
       drawBranch: function (len, fractalAngle, branchColor) {
         stroke(branchColor, 100, 100)
@@ -272,17 +256,19 @@ var beatbox = {
       enabled: true,
       history: new Array(20).fill(1),
       toggle: function () { beatbox.canvas.frameRateDisplay.enabled = !beatbox.canvas.frameRateDisplay.enabled },
-      draw: function (canvasHeight) {
-        beatbox.canvas.frameRateDisplay.history.push(frameRate())
-        let avgFr = 0
-        for (let i = 0; i < beatbox.canvas.frameRateDisplay.history.length; i++) { avgFr += beatbox.canvas.frameRateDisplay.history[i] }
-        avgFr /= beatbox.canvas.frameRateDisplay.history.length
-        textAlign(LEFT)
-        fill(100, 0, 100)
-        stroke(0, 100, 0)
-        textSize(12)
-        text("FPS: " + avgFr.toFixed(2), 10, canvasHeight - 10)
-        beatbox.canvas.frameRateDisplay.history.splice(0, 1)
+      draw: function () {
+        if (beatbox.canvas.frameRateDisplay.enabled) {
+          beatbox.canvas.frameRateDisplay.history.push(frameRate())
+          let avgFr = 0
+          for (let i = 0; i < beatbox.canvas.frameRateDisplay.history.length; i++) { avgFr += beatbox.canvas.frameRateDisplay.history[i] }
+          avgFr /= beatbox.canvas.frameRateDisplay.history.length
+          textAlign(LEFT)
+          fill(100, 0, 100)
+          stroke(0, 100, 0)
+          textSize(12)
+          text("FPS: " + avgFr.toFixed(2), 10, beatbox.canvas.height - 10)
+          beatbox.canvas.frameRateDisplay.history.splice(0, 1)
+        }
       },
     },
     setup: function () {
@@ -294,6 +280,20 @@ var beatbox = {
         color: [0, 0, 0],
       })
       beatbox.canvas.fractal.angleHistory = new Array(beatbox.canvas.fractal.angleHistoryCount).fill(0)
+    },
+    draw: function () {
+      // Set color variables from volume and frequency info
+      beatbox.canvas.highEnergy = beatbox.song.fft.getEnergy(10000, 15000)
+      beatbox.canvas.colorHue = map(beatbox.canvas.highEnergy, 0, 100, 0, 100)
+      beatbox.canvas.lowEnergy = beatbox.song.fft.getEnergy(40, 180)
+      beatbox.canvas.colorSaturation = map(beatbox.canvas.lowEnergy, 0, 255, 50, 100)
+      beatbox.canvas.totalEnergy = beatbox.song.fft.getEnergy(40, 15000)
+      beatbox.canvas.colorBrightness = map(beatbox.canvas.totalEnergy, 0, 255, 0, 100)
+
+      beatbox.canvas.background.draw()
+      beatbox.canvas.spectrogram.draw()
+      beatbox.canvas.fractal.draw()
+      beatbox.canvas.frameRateDisplay.draw()
     },
     printMessage: function (message) {
       background(0, 0, 0)
