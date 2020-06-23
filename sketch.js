@@ -38,7 +38,7 @@ var beatbox = {
       beatbox.html.buttonList.buttonListDiv = createDiv()
       beatbox.html.buttonList.buttonListDiv.class("buttonList")
       beatbox.html.buttonList.buttons.frameRateButton = createButton("FR")
-      beatbox.html.buttonList.buttons.frameRateButton.mousePressed(beatbox.canvas.frameRateDisplay.toggle)
+      beatbox.html.buttonList.buttons.frameRateButton.mousePressed(() => beatbox.canvas.frameRateDisplay.enabled = !beatbox.canvas.frameRateDisplay.enabled)
       beatbox.html.buttonList.buttonListDiv.child(beatbox.html.buttonList.buttons.frameRateButton)
 
       beatbox.html.sliderList.sliderListDiv = createDiv()
@@ -264,7 +264,6 @@ var beatbox = {
     frameRateDisplay: {
       enabled: true,
       history: new Array(20).fill(1),
-      toggle: function () { beatbox.canvas.frameRateDisplay.enabled = !beatbox.canvas.frameRateDisplay.enabled },
       draw: function () {
         if (beatbox.canvas.frameRateDisplay.enabled) {
           beatbox.canvas.frameRateDisplay.history.push(frameRate())
@@ -302,7 +301,7 @@ var beatbox = {
       beatbox.canvas.frameRateDisplay.draw()
     },
     printMessage: function (message) {
-      background(0, 0, 0)
+      beatbox.canvas.background.reset()
       stroke(0, 0, 100)
       fill(0, 0, 100)
       textSize(60)
