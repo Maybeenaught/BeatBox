@@ -12,7 +12,7 @@ var beatbox = {
         else { beatbox.htmlHelper.sliderList.sliders.songPositionSlider.value(beatbox.song.position) }
       }
       if (beatbox.song.p5Song.isPlaying() && !beatbox.song.isMuted) {
-        beatbox.sound.currentVolume = beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value()
+        beatbox.song.currentVolume = beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value()
         beatbox.song.p5Song.setVolume(
           beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() /
           beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue
@@ -21,11 +21,11 @@ var beatbox = {
       else if (beatbox.song.isMuted && beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value() != 0) { beatbox.song.toggleMute() }
     }
 
-    beatbox.sound.fft.analyze()
-    let songVolume = beatbox.sound.amp.getLevel()
-    beatbox.canvas.lowEnergy = beatbox.sound.fft.getEnergy(40, 180)
-    beatbox.canvas.highEnergy = beatbox.sound.fft.getEnergy(10000, 15000)
-    beatbox.canvas.totalEnergy = beatbox.sound.fft.getEnergy(40, 15000)
+    beatbox.song.fft.analyze()
+    let songVolume = beatbox.song.amp.getLevel()
+    beatbox.canvas.lowEnergy = beatbox.song.fft.getEnergy(40, 180)
+    beatbox.canvas.highEnergy = beatbox.song.fft.getEnergy(10000, 15000)
+    beatbox.canvas.totalEnergy = beatbox.song.fft.getEnergy(40, 15000)
 
     //set color variables from vol and freq info
     beatbox.canvas.colorHue = map(beatbox.canvas.highEnergy, 0, 100, 0, 100)
@@ -41,7 +41,7 @@ var beatbox = {
     }
     else {
       beatbox.canvas.spectrogram.nodes.push({
-        volume: beatbox.sound.maxVolume / 2,
+        volume: beatbox.song.maxVolume / 2,
         color: [0, 0, 0],
       })
     }
@@ -49,7 +49,7 @@ var beatbox = {
     if (beatbox.canvas.background.redraw) { beatbox.canvas.background.draw(beatbox.canvas.spectrogram.nodes, beatbox.canvas.height) }
     if (beatbox.canvas.fractal.enabled) { beatbox.canvas.fractal.draw() }
     if (beatbox.canvas.frameRateDisplay.enabled) { beatbox.canvas.frameRateDisplay.draw(beatbox.canvas.height) }
-    if (beatbox.canvas.spectrogram.enabled) { beatbox.canvas.spectrogram.draw(beatbox.sound.maxVolume, beatbox.canvas.colorHue) }
+    if (beatbox.canvas.spectrogram.enabled) { beatbox.canvas.spectrogram.draw(beatbox.song.maxVolume, beatbox.canvas.colorHue) }
     //remove the oldest soundHistoryNode from spectrogram
     beatbox.canvas.spectrogram.nodes.splice(0, 1)
   },
@@ -106,25 +106,16 @@ var beatbox = {
       beatbox.htmlHelper.sliderList.sliders.songPositionSlider.style("width", beatbox.canvas.width + "px")
       beatbox.htmlHelper.sliderList.sliderListDiv.child(beatbox.htmlHelper.sliderList.sliders.songPositionSlider)
 
-      beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject = createSlider(0, beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue, beatbox.sound.currentVolume, 1)
+      beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject = createSlider(0, beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue, beatbox.song.currentVolume, 1)
       beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.style("width", beatbox.canvas.width + "px")
-      beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.mouseReleased(beatbox.sound.saveCurrentVolume)
+      beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.mouseReleased(beatbox.song.saveCurrentVolume)
       beatbox.htmlHelper.sliderList.sliderListDiv.child(beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject)
     }
   },
-  sound: {
-    amp: new p5.Amplitude(),
-    fft: new p5.FFT(0.9, 128),
-    maxVolume: 1,
-    currentVolume: 1,
-    saveCurrentVolume: function () { storeItem("currentVolume", beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value()) },
-    loadCurrentVolume: function () {
-      beatbox.sound.currentVolume = getItem("currentVolume")
-      if (beatbox.sound.currentVolume === null) { beatbox.sound.currentVolume = beatbox.sound.maxVolume }
-    },
-  },
   song: {
     p5Song: {},
+    amp: new p5.Amplitude(),
+    fft: new p5.FFT(0.9, 128),
     isLoaded: false,
     isLoading: false,
     isMuted: false,
@@ -132,12 +123,14 @@ var beatbox = {
     position: 0,
     positionAutoUpdate: true,
     skipRate: 10, //number of seconds to skip forward or back,
+    maxVolume: 1,
+    currentVolume: 1,
     setup: function () { beatbox.song.p5Song = loadSound("sounds/Sunrise.mp3", beatbox.song.onSongLoaded, beatbox.song.onSongLoadFail, beatbox.song.onSongLoading) },
     onSongLoaded: function () {
       beatbox.song.isLoaded = true
       beatbox.song.isLoading = false
       beatbox.song.duration = beatbox.song.p5Song.duration()
-      beatbox.sound.loadCurrentVolume()
+      beatbox.song.loadCurrentVolume()
       beatbox.htmlHelper.onSongLoaded()
       beatbox.canvas.setVisualElementsVisible(true)
     },
@@ -158,14 +151,14 @@ var beatbox = {
         beatbox.htmlHelper.buttonList.buttons.songButton.html("Pause")
         beatbox.song.p5Song.play()
         if (beatbox.song.isMuted) { beatbox.song.p5Song.setVolume(0) }
-        else { beatbox.song.p5Song.setVolume(beatbox.sound.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue) }
+        else { beatbox.song.p5Song.setVolume(beatbox.song.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue) }
         beatbox.song.p5Song.onended(beatbox.song.onSongEnd)
       }
     },
     toggleMute: function () {
       if (beatbox.song.isMuted) {
-        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value(beatbox.sound.currentVolume)
-        beatbox.song.p5Song.setVolume(beatbox.sound.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue)
+        beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value(beatbox.song.currentVolume)
+        beatbox.song.p5Song.setVolume(beatbox.song.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue)
         beatbox.htmlHelper.buttonList.buttons.muteButton.html("Mute")
       }
       else {
@@ -174,6 +167,11 @@ var beatbox = {
         beatbox.htmlHelper.buttonList.buttons.muteButton.html("Unmute")
       }
       beatbox.song.isMuted = !beatbox.song.isMuted
+    },
+    saveCurrentVolume: function () { storeItem("currentVolume", beatbox.htmlHelper.sliderList.sliders.volumeSlider.sliderObject.value()) },
+    loadCurrentVolume: function () {
+      beatbox.song.currentVolume = getItem("currentVolume")
+      if (beatbox.song.currentVolume === null) { beatbox.song.currentVolume = beatbox.song.maxVolume }
     },
   },
   canvas: {
@@ -225,7 +223,7 @@ var beatbox = {
         beatbox.canvas.fractal.resolution = map(beatbox.canvas.totalEnergy, 0, 100, 16, 10) //more energy => finer resolution
         beatbox.canvas.fractal.colorResolution = map(beatbox.canvas.totalEnergy, 0, 255, 0, 50)
         //average the current fractal angle with previous angles for a smoother transition
-        let currentFractalAngle = map(beatbox.sound.amp.getLevel(), 0, beatbox.sound.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue, 0, PI)
+        let currentFractalAngle = map(beatbox.song.amp.getLevel(), 0, beatbox.song.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue, 0, PI)
         beatbox.canvas.fractal.angleHistory.push(currentFractalAngle)
         let fractalAngleAvg = 0
         for (let i = 0; i < beatbox.canvas.fractal.angleHistory.length; i++) { fractalAngleAvg += beatbox.canvas.fractal.angleHistory[i] }
@@ -296,7 +294,7 @@ var beatbox = {
       beatbox.canvas.p5Canvas.mousePressed(beatbox.song.togglePlayback)
       colorMode(HSB, 100)
       beatbox.canvas.spectrogram.nodes = new Array(beatbox.canvas.width).fill({
-        volume: beatbox.sound.maxVolume / 2,
+        volume: beatbox.song.maxVolume / 2,
         color: [0, 0, 0],
       })
       beatbox.canvas.fractal.angleHistory = new Array(beatbox.canvas.fractal.angleHistoryCount).fill(0)
