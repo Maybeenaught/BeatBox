@@ -27,7 +27,7 @@ var beatbox = {
     beatbox.canvas.highEnergy = beatbox.song.fft.getEnergy(10000, 15000)
     beatbox.canvas.totalEnergy = beatbox.song.fft.getEnergy(40, 15000)
 
-    //set color variables from vol and freq info
+    // Set color variables from volume and frequency info
     beatbox.canvas.colorHue = map(beatbox.canvas.highEnergy, 0, 100, 0, 100)
     beatbox.canvas.colorSaturation = map(beatbox.canvas.lowEnergy, 0, 255, 50, 100)
     beatbox.canvas.colorBrightness = map(beatbox.canvas.totalEnergy, 0, 255, 0, 100)
@@ -50,12 +50,11 @@ var beatbox = {
     if (beatbox.canvas.fractal.enabled) { beatbox.canvas.fractal.draw() }
     if (beatbox.canvas.frameRateDisplay.enabled) { beatbox.canvas.frameRateDisplay.draw(beatbox.canvas.height) }
     if (beatbox.canvas.spectrogram.enabled) { beatbox.canvas.spectrogram.draw(beatbox.song.maxVolume, beatbox.canvas.colorHue) }
-    //remove the oldest soundHistoryNode from spectrogram
-    beatbox.canvas.spectrogram.nodes.splice(0, 1)
+    beatbox.canvas.spectrogram.nodes.splice(0, 1) // Remove the oldest soundHistoryNode from spectrogram
   },
   htmlHelper: {
     canvasDiv: {},
-    interactivityDiv: {}, //div to hold buttons, sliders, etc.
+    interactivityDiv: {},
     buttonList: {
       buttonListDiv: {},
       buttons: {
@@ -76,7 +75,7 @@ var beatbox = {
     },
     setup: function () {
       beatbox.htmlHelper.canvasDiv = createDiv()
-      beatbox.htmlHelper.canvasDiv.class("mediaPlayer") //set the html class
+      beatbox.htmlHelper.canvasDiv.class("mediaPlayer")
       beatbox.htmlHelper.canvasDiv.child(beatbox.canvas.p5Canvas)
 
       beatbox.htmlHelper.buttonList.buttonListDiv = createDiv()
@@ -122,7 +121,7 @@ var beatbox = {
     duration: 0,
     position: 0,
     positionAutoUpdate: true,
-    skipRate: 10, //number of seconds to skip forward or back,
+    skipRate: 10, // Number of seconds to skip forward or back,
     maxVolume: 1,
     currentVolume: 1,
     setup: function () { beatbox.song.p5Song = loadSound("sounds/Sunrise.mp3", beatbox.song.onSongLoaded, beatbox.song.onSongLoadFail, beatbox.song.onSongLoading) },
@@ -185,7 +184,7 @@ var beatbox = {
     colorSaturation: {},
     colorBrightness: {},
     background: {
-      redraw: true, //when false, previous frames aren't overwritten. Set to true for 'colorful' bg.
+      redraw: true, // When false, previous frames aren't overwritten. Set to true for 'colorful' bg.
       reset: function () { background(0, 0, 0) },
       draw: function (spectrogram, height) {
         for (let i = 0; i < spectrogram.length; i++) {
@@ -213,16 +212,16 @@ var beatbox = {
     fractal: {
       enabled: true,
       angleHistory: [],
-      angleHistoryCount: 3, //determines the smoothness of the fractal movement
-      heightDivider: 8, //determines starting heights of fractals relative to window height
+      angleHistoryCount: 3, // Determines the smoothness of the fractal movement
+      heightDivider: 8, // Determines starting heights of fractals relative to window height
       rotateOffset: 0,
       resolution: 0,
       colorResolution: 0,
       draw: function () {
-        //TODO: find a way to normalize totalEnergy
-        beatbox.canvas.fractal.resolution = map(beatbox.canvas.totalEnergy, 0, 100, 16, 10) //more energy => finer resolution
+        // TODO: find a way to normalize totalEnergy
+        beatbox.canvas.fractal.resolution = map(beatbox.canvas.totalEnergy, 0, 100, 16, 10) // More energy => Finer resolution
         beatbox.canvas.fractal.colorResolution = map(beatbox.canvas.totalEnergy, 0, 255, 0, 50)
-        //average the current fractal angle with previous angles for a smoother transition
+        // Average the current fractal angle with previous angles for a smoother transition
         let currentFractalAngle = map(beatbox.song.amp.getLevel(), 0, beatbox.song.currentVolume / beatbox.htmlHelper.sliderList.sliders.volumeSlider.maxValue, 0, PI)
         beatbox.canvas.fractal.angleHistory.push(currentFractalAngle)
         let fractalAngleAvg = 0
@@ -230,17 +229,16 @@ var beatbox = {
         fractalAngleAvg /= beatbox.canvas.fractal.angleHistory.length
         beatbox.canvas.fractal.angleHistory.splice(0, 1)
 
-        //draw the fractals
-        //TODO: draw both fractals at once for better performance
+        // TODO: draw both fractals at once for better performance
         stroke(beatbox.canvas.colorHue, 100, 100)
 
-        //bottom fractal
+        // Draw bottom fractal
         push()
         translate(beatbox.canvas.width / 2, beatbox.canvas.height)
         beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue)
         pop()
 
-        //top fractal
+        // Draw top fractal
         push()
         translate(width / 2, 0)
         scale(1, -1)
@@ -248,23 +246,21 @@ var beatbox = {
         pop()
       },
       drawBranch: function (len, fractalAngle, branchColor) {
-        //draw the branch
         stroke(branchColor, 100, 100)
         line(0, 0, 0, -len)
-        //Offset the child branch a certain amount around the color wheel
+        // Offset the child branch a certain amount around the color wheel
         branchColor += beatbox.canvas.fractal.colorResolution
         if (branchColor > 99) { branchColor %= 100 }
-        //if the current branch length isn't too small, continue recursing
         if (len > beatbox.canvas.fractal.resolution) {
           translate(0, -len)
 
-          //right branch
+          // Draw right branch
           push()
           rotate(fractalAngle)
           beatbox.canvas.fractal.drawBranch(len * 0.67, fractalAngle, branchColor)
           pop()
 
-          //left branch
+          // Draw left branch
           push()
           rotate(-fractalAngle)
           beatbox.canvas.fractal.drawBranch(len * 0.67, fractalAngle, branchColor)
@@ -315,9 +311,9 @@ var beatbox = {
   },
   interactivity: {
     timeSkipLength: 10,
-    //This method exists to mitigate bugs caused by the jump() function
-    //Shoutout to joepdooper on this thread for finding this solution:
-    //https://github.com/processing/p5.js-sound/issues/372
+    // This method exists to mitigate bugs caused by the jump() function
+    // Shoutout to joepdooper on this thread for finding this solution:
+    // https://github.com/processing/p5.js-sound/issues/372
     preJump: function () {
       setTimeout(function () {
         Object.assign(beatbox.song.p5Song, { _playing: true })
@@ -351,25 +347,19 @@ var beatbox = {
           beatbox.interactivity.konami.checkKonamiCode("RIGHT")
           break
         case UP_ARROW:
-          beatbox.interactivity.konami.checkKonamiCode("UP")
-          break
+          beatbox.interactivity.konami.checkKonamiCode("UP"); break
         case DOWN_ARROW:
-          beatbox.interactivity.konami.checkKonamiCode("DOWN")
-          break
-        case 65: //a
-          beatbox.interactivity.konami.checkKonamiCode("A")
-          break
-        case 66: //b
-          beatbox.interactivity.konami.checkKonamiCode("B")
-          break
-        case 32: //spacebar
-          beatbox.song.togglePlayback()
-          break
+          beatbox.interactivity.konami.checkKonamiCode("DOWN"); break
+        case 65: // a
+          beatbox.interactivity.konami.checkKonamiCode("A"); break
+        case 66: // b
+          beatbox.interactivity.konami.checkKonamiCode("B"); break
+        case 32: // Spacebar
+          beatbox.song.togglePlayback(); break
         default:
-          beatbox.interactivity.konami.checkKonamiCode("")
-          break
+          beatbox.interactivity.konami.checkKonamiCode(""); break
       }
-      return false //prevent any default window behaviour
+      return false // Prevent any default window behaviour
     },
     konami: {
       code: new Array(10).fill(""),
