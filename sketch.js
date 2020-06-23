@@ -201,8 +201,8 @@ var beatbox = {
     fractal: {
       enabled: true,
       angleHistory: [],
-      angleHistoryCount: 25, // Determines the smoothness of the fractal movement
-      angleMultiplier: 1,
+      angleHistoryCount: 100, // Determines the smoothness of the fractal movement
+      angleMultiplier: 10,
       trunkSkip: 1, // Determines the number of branches to exclude from the beginning of the fractal
       heightDivider: 7, // Determines starting heights of fractals relative to window height
       rotateOffset: 0,
