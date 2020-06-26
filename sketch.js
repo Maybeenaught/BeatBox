@@ -98,7 +98,7 @@ var beatbox = {
     skipRate: 10, // Number of seconds to skip forward or back,
     maxVolume: 1,
     currentVolume: 1,
-    setup: function () { beatbox.song.p5Song = loadSound("sounds/Sunrise.mp3", beatbox.song.onSongLoaded, beatbox.song.onSongLoadFail, beatbox.song.onSongLoading) },
+    setup: function () { beatbox.song.p5Song = loadSound("sounds/Mmmm.mp3", beatbox.song.onSongLoaded, beatbox.song.onSongLoadFail, beatbox.song.onSongLoading) },
     onSongLoaded: function () {
       beatbox.song.isLoaded = true
       beatbox.song.isLoading = false
@@ -201,10 +201,10 @@ var beatbox = {
     fractal: {
       enabled: true,
       angleHistory: [],
-      angleHistoryCount: 100, // Determines the smoothness of the fractal movement
-      angleMultiplier: 3,
+      angleHistoryCount: 400, // Determines the smoothness of the fractal movement
+      angleMultiplier: 5,
       trunkSkip: 1, // Determines the number of branches to exclude from the beginning of the fractal
-      heightDivider: 3.5, // Determines starting heights of fractals relative to window height
+      heightDivider: 3, // Determines starting heights of fractals relative to window height
       rotateOffset: 0,
       resolution: 0,
       colorResolution: 0,
@@ -227,7 +227,7 @@ var beatbox = {
 
           // TODO: draw both fractals at once for better performance
           stroke(beatbox.canvas.colorHue, 100, 100)
-
+          
           // Draw bottom fractal
           push()
           translate(beatbox.canvas.width / 2, beatbox.canvas.height)
