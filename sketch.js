@@ -171,7 +171,7 @@ var beatbox = {
       },
     },
     spectrogram: {
-      enabled: true,
+      enabled: false,
       nodes: [],
       setup: function () {
         beatbox.canvas.spectrogram.nodes = new Array(beatbox.canvas.width).fill({
@@ -202,12 +202,13 @@ var beatbox = {
       enabled: true,
       angleHistory: [],
       angleHistoryCount: 100, // Determines the smoothness of the fractal movement
-      angleMultiplier: 10,
+      angleMultiplier: 3,
       trunkSkip: 1, // Determines the number of branches to exclude from the beginning of the fractal
-      heightDivider: 2, // Determines starting heights of fractals relative to window height
+      heightDivider: 3.5, // Determines starting heights of fractals relative to window height
       rotateOffset: 0,
       resolution: 0,
       colorResolution: 0,
+      startingThickness: 5,
       setup: function () {
         beatbox.canvas.fractal.angleHistory = new Array(beatbox.canvas.fractal.angleHistoryCount).fill(0)
       },
@@ -230,14 +231,14 @@ var beatbox = {
           // Draw bottom fractal
           push()
           translate(beatbox.canvas.width / 2, beatbox.canvas.height)
-          beatbox.canvas.fractal.drawBranch(beatbox.canvas.height / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue, 0, 5)
+          beatbox.canvas.fractal.drawBranch(beatbox.canvas.height / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue, 0, beatbox.canvas.startingThickness)
           pop()
 
           // Draw top fractal
           push()
           translate(width / 2, 0)
           scale(1, -1)
-          beatbox.canvas.fractal.drawBranch(beatbox.canvas.height / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue, 0, 5)
+          beatbox.canvas.fractal.drawBranch(beatbox.canvas.height / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue, 0, beatbox.canvas.startingThickness)
           pop()
         }
       },
