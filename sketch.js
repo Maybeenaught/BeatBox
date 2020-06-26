@@ -204,7 +204,7 @@ var beatbox = {
       angleHistoryCount: 100, // Determines the smoothness of the fractal movement
       angleMultiplier: 10,
       trunkSkip: 1, // Determines the number of branches to exclude from the beginning of the fractal
-      heightDivider: 7, // Determines starting heights of fractals relative to window height
+      heightDivider: 2, // Determines starting heights of fractals relative to window height
       rotateOffset: 0,
       resolution: 0,
       colorResolution: 0,
@@ -212,7 +212,7 @@ var beatbox = {
         beatbox.canvas.fractal.angleHistory = new Array(beatbox.canvas.fractal.angleHistoryCount).fill(0)
       },
       draw: function () {
-        if (beatbox.canvas.fractal.enabled) {
+        if (beatbox.canvas.fractal.enabled && beatbox.song.p5Song.isPlaying()) {
           // TODO: find a way to normalize totalEnergy
           beatbox.canvas.fractal.resolution = map(beatbox.canvas.totalEnergy, 0, 100, 16, 10) // More energy => Finer resolution
           beatbox.canvas.fractal.colorResolution = map(beatbox.canvas.totalEnergy, 0, 255, 0, 50)
@@ -230,14 +230,14 @@ var beatbox = {
           // Draw bottom fractal
           push()
           translate(beatbox.canvas.width / 2, beatbox.canvas.height)
-          beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue, 0, 5)
+          beatbox.canvas.fractal.drawBranch(beatbox.canvas.height / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue, 0, 5)
           pop()
 
           // Draw top fractal
           push()
           translate(width / 2, 0)
           scale(1, -1)
-          beatbox.canvas.fractal.drawBranch(beatbox.canvas.width / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue, 0, 5)
+          beatbox.canvas.fractal.drawBranch(beatbox.canvas.height / beatbox.canvas.fractal.heightDivider, fractalAngleAvg, beatbox.canvas.colorHue, 0, 5)
           pop()
         }
       },
