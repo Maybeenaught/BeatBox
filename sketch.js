@@ -87,23 +87,39 @@ var beatbox = {
       beatbox.html.buttonList.buttons.muteButton.mousePressed(beatbox.song.toggleMute)
       beatbox.html.buttonList.buttonListDiv.child(beatbox.html.buttonList.buttons.muteButton)
 
+      let rowDiv = createDiv()
+      rowDiv.class("row")
+      beatbox.html.fractalSliderList.fractalSliderListDiv.child(rowDiv)
+
       beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider = createSlider(0, 100, 5, 1)
       beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider.mouseReleased(
         () => beatbox.canvas.fractal.angleMultiplier = beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider.value()
       )
-      beatbox.html.fractalSliderList.fractalSliderListDiv.child(beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider)
+      beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider.class("slider")
+      let angleMultiCol = createDiv()
+      angleMultiCol.class("col-sm-4")
+      angleMultiCol.child(beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider)
+      rowDiv.child(angleMultiCol)
 
+      let angleHistoryCol = createDiv()
+      angleHistoryCol.class("col-sm-4")
       beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider = createSlider(25, 500, 25, 25)
       beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider.mouseReleased(
         () => beatbox.canvas.fractal.angleHistoryCount = beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider.value()
       )
-      beatbox.html.fractalSliderList.fractalSliderListDiv.child(beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider)
+      beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider.class("slider")
+      angleHistoryCol.child(beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider)
+      rowDiv.child(angleHistoryCol)
 
+      let heightDividerCol = createDiv()
+      heightDividerCol.class("col-sm-4")
       beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider = createSlider(2.5, 10, 3, .1)
       beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider.mouseReleased(
         () => beatbox.canvas.fractal.heightDivider = beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider.value()
       )
-      beatbox.html.fractalSliderList.fractalSliderListDiv.child(beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider)
+      beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider.class("slider")
+      heightDividerCol.child(beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider)
+      rowDiv.child(heightDividerCol)
 
       beatbox.html.musicSliderList.musicSliders.songPositionSlider = createSlider(0, beatbox.song.p5Song.duration(), 0, 1)
       beatbox.html.musicSliderList.musicSliders.songPositionSlider.style("width", beatbox.canvas.width + "px")
@@ -319,7 +335,7 @@ var beatbox = {
     setup: function () {
       colorMode(HSB, 100)
       beatbox.canvas.width = windowWidth - 100
-      beatbox.canvas.height = windowHeight - 200
+      beatbox.canvas.height = windowHeight - 150
       beatbox.canvas.p5Canvas = createCanvas(beatbox.canvas.width, beatbox.canvas.height)
       beatbox.canvas.p5Canvas.mousePressed(beatbox.song.togglePlayback)
       beatbox.canvas.spectrogram.setup()
