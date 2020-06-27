@@ -91,7 +91,7 @@ var beatbox = {
       rowDiv.class("row")
       beatbox.html.fractalSliderList.fractalSliderListDiv.child(rowDiv)
 
-      beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider = createSlider(0, 100, 5, 1)
+      beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider = createSlider(1, 10, 5, 1)
       beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider.mouseReleased(
         () => beatbox.canvas.fractal.angleMultiplier = beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider.value()
       )
@@ -103,7 +103,7 @@ var beatbox = {
 
       let angleHistoryCol = createDiv()
       angleHistoryCol.class("col-sm-4")
-      beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider = createSlider(25, 500, 25, 25)
+      beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider = createSlider(25, 300, 25, 25)
       beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider.mouseReleased(
         () => beatbox.canvas.fractal.angleHistoryCount = beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider.value()
       )
@@ -113,7 +113,7 @@ var beatbox = {
 
       let heightDividerCol = createDiv()
       heightDividerCol.class("col-sm-4")
-      beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider = createSlider(2.5, 10, 3, .1)
+      beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider = createSlider(2.5, 4, 3, .1)
       beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider.mouseReleased(
         () => beatbox.canvas.fractal.heightDivider = beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider.value()
       )
