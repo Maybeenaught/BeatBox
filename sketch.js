@@ -144,7 +144,7 @@ var beatbox = {
     skipRate: 10, // Number of seconds to skip forward or back,
     maxVolume: 1,
     currentVolume: 1,
-    setup: function () { beatbox.song.p5Song = loadSound("sounds/Mmmm.mp3", beatbox.song.onSongLoaded, beatbox.song.onSongLoadFail, beatbox.song.onSongLoading) },
+    setup: function () { beatbox.song.p5Song = loadSound("sounds/Blissful_Marionette.mp3", beatbox.song.onSongLoaded, beatbox.song.onSongLoadFail, beatbox.song.onSongLoading) },
     onSongLoaded: function () {
       beatbox.song.isLoaded = true
       beatbox.song.isLoading = false
