@@ -92,9 +92,6 @@ var beatbox = {
       beatbox.html.fractalSliderList.fractalSliderListDiv.child(rowDiv)
 
       beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider = createSlider(1, 10, 8, 0.5)
-      beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider.mouseReleased(
-        () => beatbox.canvas.fractal.angleMultiplier = beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider.value()
-      )
       beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider.class("slider")
       let angleMultiCol = createDiv()
       angleMultiCol.class("col-sm-4")
@@ -104,9 +101,6 @@ var beatbox = {
       let angleHistoryCol = createDiv()
       angleHistoryCol.class("col-sm-4")
       beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider = createSlider(25, 500, 25, 25)
-      beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider.mouseReleased(
-        () => beatbox.canvas.fractal.angleHistoryCount = beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider.value()
-      )
       beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider.class("slider")
       angleHistoryCol.child(beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider)
       rowDiv.child(angleHistoryCol)
@@ -114,9 +108,6 @@ var beatbox = {
       let heightDividerCol = createDiv()
       heightDividerCol.class("col-sm-4")
       beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider = createSlider(2.5, 4, 3, .1)
-      beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider.mouseReleased(
-        () => beatbox.canvas.fractal.heightDivider = beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider.value()
-      )
       beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider.class("slider")
       heightDividerCol.child(beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider)
       rowDiv.child(heightDividerCol)
@@ -260,6 +251,10 @@ var beatbox = {
       },
       draw: function () {
         if (beatbox.canvas.fractal.enabled && beatbox.song.p5Song.isPlaying()) {
+          beatbox.canvas.fractal.angleMultiplier = beatbox.html.fractalSliderList.fractalSliders.angleMultiplierSlider.value()
+          beatbox.canvas.fractal.angleHistoryCount = beatbox.html.fractalSliderList.fractalSliders.angleHistoryCountSlider.value()
+          beatbox.canvas.fractal.heightDivider = beatbox.html.fractalSliderList.fractalSliders.heightDividerSlider.value()
+
           // TODO: find a way to normalize totalEnergy
           beatbox.canvas.fractal.colorResolution = map(beatbox.canvas.totalEnergy, 0, 255, 0, 50)
           // Average the current fractal angle with previous angles for a smoother transition
@@ -272,7 +267,7 @@ var beatbox = {
 
           // TODO: draw both fractals at once for better performance
           stroke(beatbox.canvas.colorHue, 100, 100)
-          
+
           // Draw bottom fractal
           push()
           translate(beatbox.canvas.width / 2, beatbox.canvas.height)
