@@ -64,7 +64,11 @@ body, .container {
     flex-direction: column;
   }
 
-.fractalSliderList [type="slider"] {
+#fractalSliderList {
+  width: 100%
+}
+
+#fractalSliderList [type="range"] {
   margin-left:auto;
   margin-right:auto;
   display:block;
