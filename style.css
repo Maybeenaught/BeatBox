@@ -40,7 +40,7 @@ body, .container {
       display:inline-block;
       cursor:pointer;
       color:#ffffff;
-      font-family:Arial;
+      font-family: Arial, Helvetica, Verdana, Tahoma, sans-serif;
       font-size:15px;
       padding:6px 13px;
       text-decoration:none;
