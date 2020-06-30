@@ -32,15 +32,15 @@ var beatbox = {
       select('.PlayButton').mousePressed(beatbox.song.togglePlayback)
       select('.MuteButton').mousePressed(beatbox.song.toggleMute)
 
-      let angleMultiplierSlider = createSlider(1, 10, 8, 0.5)
+      let angleMultiplierSlider = createSlider(1.5, 10, 8, 0)
       angleMultiplierSlider.class("angleMultiplierSlider")
       select('#angleMultiplierDiv').child(angleMultiplierSlider)
 
-      let angleHistoryCountSlider = createSlider(25, 500, 25, 25)
-      angleHistoryCountSlider.class("angleHistoryCountSlider")
-      select('#angleHistoryDiv').child(angleHistoryCountSlider)
+      let indexMultiplierSlider = createSlider(0.5, 1.5, 1, 0)
+      indexMultiplierSlider.class("indexMultiplierSlider")
+      select('#indexMultiplierDiv').child(indexMultiplierSlider)
 
-      let heightDividerSlider = createSlider(2.5, 4, 3, .1)
+      let heightDividerSlider = createSlider(2.5, 4, 3, 0)
       heightDividerSlider.class("heightDividerSlider")
       select('#heightDividerDiv').child(heightDividerSlider)
 
@@ -152,6 +152,7 @@ var beatbox = {
       angleHistory: [],
       angleHistoryCount: 400, // Determines the smoothness of the fractal movement
       angleMultiplier: 5,
+      indexMultiplier: 0.99,
       trunkSkip: 1, // Determines the number of branches to exclude from the beginning of the fractal
       heightDivider: 3, // Determines starting heights of fractals relative to window height
       rotateOffset: 0,
@@ -164,7 +165,7 @@ var beatbox = {
       draw: function () {
         if (beatbox.canvas.fractal.enabled && beatbox.song.p5Song.isPlaying()) {
           beatbox.canvas.fractal.angleMultiplier = select('.angleMultiplierSlider').value()
-          beatbox.canvas.fractal.angleHistoryCount = select('.angleHistoryCountSlider').value()
+          beatbox.canvas.fractal.indexMultiplier = select('.indexMultiplierSlider').value()
           beatbox.canvas.fractal.heightDivider = select('.heightDividerSlider').value()
 
           // TODO: find a way to normalize totalEnergy
@@ -205,7 +206,7 @@ var beatbox = {
           translate(0, -len)
 
           let lengthModifier = len * 0.67
-          let angleModifier = fractalAngle * beatbox.canvas.fractal.angleMultiplier / (index * 0.67)
+          let angleModifier = fractalAngle * beatbox.canvas.fractal.angleMultiplier / (index * beatbox.canvas.fractal.indexMultiplier)
 
           // Draw right branch
           push()
